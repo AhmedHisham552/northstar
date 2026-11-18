@@ -1,0 +1,147 @@
+export type Sub = { id: number; text: string; done: boolean }
+export type Goal = {
+  id: number
+  text: string
+  label: string | null
+  progress: number | null
+  createdAt: string
+  doneAt: string | null
+  nextSub: number
+  subs: Sub[]
+}
+export type State = { version: 2; nextId: number; focus: Record<string, number>; goals: Goal[] }
+export type Event = {
+  at: string
+  type: string
+  goal: number
+  sub?: number
+  label: string | null
+  text: string
+  from?: number
+  to?: number
+  note?: string
+  open?: string[]
+}
+export type Op =
+  | { kind: 'add'; texts: string[]; label: string | null }
+  | { kind: 'sub'; goal: number; texts: string[] }
+  | { kind: 'tick'; goal: number; sub: number; note?: string }
+  | { kind: 'progress'; goal: number; value: number; note?: string }
+  | { kind: 'done'; goal: number; note?: string }
+  | { kind: 'rm'; goal: number; sub?: number }
+  | { kind: 'focus'; goal: number | null; label: string | null }
+  | { kind: 'tag'; goal: number; label: string | null }
+
+type Result = { state: State; events: Event[] } | { error: string }
+
+export const emptyState = (): State => ({ version: 2, nextId: 1, focus: {}, goals: [] })
+
+export const labelKey = (label: string | null) => label ?? 'general'
+
+export function progressOf(g: Goal): number {
+  if (g.doneAt) return 100
+  if (g.subs.length) return Math.round((g.subs.filter(s => s.done).length / g.subs.length) * 100)
+  return g.progress ?? 0
+}
+
+export function glyph(p: number): string {
+  if (p >= 100) return '✓'
+  if (p >= 63) return '◕'
+  if (p >= 38) return '◑'
+  if (p >= 1) return '◔'
+  return '○'
+}
+
+export const visibleGoals = (s: State, today: string) => s.goals.filter(g => !g.doneAt || g.doneAt.slice(0, 10) >= today)
+
+const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)))
+
+export function applyOp(input: State, op: Op, at: string): Result {
+  const s: State = structuredClone(input)
+  const events: Event[] = []
+  const log = (g: Goal, type: string, extra: Partial<Event> = {}) =>
+    events.push({ at, type, goal: g.id, label: g.label, text: g.text, ...extra })
+
+  if (op.kind === 'add') {
+    for (const text of op.texts) {
+      const g: Goal = { id: s.nextId++, text, label: op.label, progress: null, createdAt: at, doneAt: null, nextSub: 1, subs: [] }
+      s.goals.push(g)
+      log(g, 'goal.add')
+    }
+    return { state: s, events }
+  }
+
+  if (op.kind === 'focus' && op.goal === null) {
+    delete s.focus[labelKey(op.label)]
+    return { state: s, events }
+  }
+
+  const g = s.goals.find(x => x.id === op.goal)
+  if (!g) return { error: `no goal #${op.goal}` }
+
+  const finish = (note?: string) => {
+    g.doneAt = at
+    const open = g.subs.filter(x => !x.done).map(x => x.text)
+    log(g, 'goal.done', { ...(note ? { note } : {}), ...(open.length ? { open } : {}) })
+  }
+  const reopen = () => {
+    g.doneAt = null
+    log(g, 'goal.reopen')
+  }
+
+  switch (op.kind) {
+    case 'sub':
+      for (const text of op.texts) {
+        const sub = { id: g.nextSub++, text, done: false }
+        g.subs.push(sub)
+        log(g, 'sub.add', { sub: sub.id, text })
+      }
+      if (g.doneAt) reopen()
+      break
+    case 'tick': {
+      const sub = g.subs.find(x => x.id === op.sub)
+      if (!sub) return { error: `no sub-task ${g.id}.${op.sub}` }
+      sub.done = !sub.done
+      log(g, sub.done ? 'sub.done' : 'sub.undone', { sub: sub.id, text: sub.text, ...(op.note ? { note: op.note } : {}) })
+      if (sub.done && !g.doneAt && g.subs.every(x => x.done)) finish()
+      if (!sub.done && g.doneAt) reopen()
+      break
+    }
+    case 'progress': {
+      if (g.subs.length) return { error: `goal ${g.id} has sub-tasks; tick them instead` }
+      const from = progressOf(g)
+      g.progress = clamp(op.value)
+      if (g.progress < 100 && g.doneAt) reopen()
+      log(g, 'goal.progress', { from, to: g.progress, ...(op.note ? { note: op.note } : {}) })
+      if (g.progress === 100 && !g.doneAt) finish()
+      break
+    }
+    case 'done':
+      if (!g.doneAt) finish(op.note)
+      break
+    case 'rm':
+      if (op.sub === undefined) {
+        s.goals = s.goals.filter(x => x.id !== g.id)
+        for (const k of Object.keys(s.focus)) if (s.focus[k] === g.id) delete s.focus[k]
+        log(g, 'goal.remove')
+      } else {
+        const sub = g.subs.find(x => x.id === op.sub)
+        if (!sub) return { error: `no sub-task ${g.id}.${op.sub}` }
+        g.subs = g.subs.filter(x => x !== sub)
+        log(g, 'sub.remove', { sub: sub.id, text: sub.text })
+      }
+      break
+    case 'focus':
+      s.focus[labelKey(g.label)] = g.id
+      log(g, 'goal.focus')
+      break
+    case 'tag': {
+      const old = labelKey(g.label)
+      if (s.focus[old] === g.id) delete s.focus[old]
+      g.label = op.label
+      log(g, 'goal.label')
+      break
+    }
+  }
+  return { state: s, events }
+}
