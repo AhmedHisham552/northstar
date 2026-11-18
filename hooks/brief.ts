@@ -31,6 +31,7 @@ export function goalsBrief(v: Shown): string {
     '',
     'Keep this tracker current with the update_goals tool, without asking:',
     '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
+    '- When you begin a listed sub-task, call "start <n>.<m>" (it spins in the pane); "start <n>" for a goal without sub-tasks.',
     '- When your work finishes a listed sub-task, call "tick <n>.<m>"; when it finishes a goal without sub-tasks, call "done <n>".',
     '- Do not invent goals; add one only when the user asks.',
   ].join('\n')
@@ -45,8 +46,8 @@ export function workPrompt(items: { goal: Goal; subs?: number[] }[], dispatch: D
   ])
   const runner =
     dispatch === 'workflow'
-      ? `run one workflow per goal with the Workflow tool (I opted into workflows by running /goals:work in workflow mode). Give each a self-contained brief (goal, its sub-tasks, my answers, constraints). Its agents tick sub-tasks with update_goals ("tick <n>.<m> \\"short note\\"") as they finish them, do not guess on open questions, and the workflow returns the exact question instead of continuing when blocked.`
-      : `start one background agent per goal with a self-contained brief (goal, its sub-tasks, my answers, constraints). Each agent ticks its sub-tasks with update_goals ("tick <n>.<m> \\"short note\\"") as it finishes them, does not guess on open questions, and if blocked returns the exact question instead of continuing.`
+      ? `run one workflow per goal with the Workflow tool (I opted into workflows by running /goals:work in workflow mode). Give each a self-contained brief (goal, its sub-tasks, my answers, constraints). Its agents call update_goals "start <n>.<m>" when they begin a sub-task and tick it ("tick <n>.<m> \\"short note\\"") as they finish them, do not guess on open questions, and the workflow returns the exact question instead of continuing when blocked.`
+      : `start one background agent per goal with a self-contained brief (goal, its sub-tasks, my answers, constraints). Each agent calls update_goals "start <n>.<m>" when it begins a sub-task and ticks it ("tick <n>.<m> \\"short note\\"") as it finishes them, does not guess on open questions, and if blocked returns the exact question instead of continuing.`
   return [
     `Orchestrate work on my goal${items.length > 1 ? 's' : ''}:\n${list.join('\n')}`,
     'Phase 1, align (here, with me): for each goal, gather what you can from the code, docs and tools first. ' +

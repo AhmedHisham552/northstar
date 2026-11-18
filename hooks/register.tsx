@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { applyOp, labelKey } from './model'
+import { applyOp, isActive, labelKey } from './model'
 import type { Goal, Op } from './model'
 import { repoLabel } from './label'
 import { parse } from './parse'
@@ -18,6 +18,17 @@ const PANE = 'goals'
 const TOOL = 'mcp__goals__update_goals'
 const MODEL = 'claude-haiku-5-5'
 const view = atom({ plugin: 'goals', key: 'view' } as const, null as View | null)
+const frame = atom({ plugin: 'goals', key: 'frame' } as const, null as number | null)
+const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+// Advance the spinner only while something is in progress, so an idle pane never redraws.
+async function spinTick($: Engine) {
+  const v = await read($, view)
+  if (!v?.state?.active || !Object.keys(v.state.active).length) return
+  const nowMs = await $.clock.now()
+  const busy = Object.keys(v.state.active).some(k => isActive(v.state!, k, nowMs))
+  if (busy) await update($, frame, f => ((f ?? 0) + 1) % SPINNER.length)
+}
 
 export const HELP = [
   '/goals add [@label|@here] A; B   add goals (General by default)',
@@ -27,6 +38,7 @@ export const HELP = [
   '/goals done <n> ["note"]         mark goal n done',
   '/goals rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
   '/goals focus <n> | focus off     set or clear the NOW goal',
+  '/goals start <n|n.m> … | stop    mark work in progress (spins in the pane)',
   '/goals tag <n> @label|@general   move a goal to a label',
   '/goals @label                    open / close a label in the pane',
   '/goals yesterday | today | week  summary with a ready-to-post update',
@@ -160,6 +172,7 @@ export const register: Register = (on, options) => {
     void $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
     // ponytail: 4s mtime poll; a file watcher if the API ever offers one.
     $.clock.every(4000, () => void refresh($, o))
+    $.clock.every(120, () => void spinTick($))
     return next(e)
   })
 
@@ -193,7 +206,12 @@ export const register: Register = (on, options) => {
     const ui = $.ui.resolve(e)
     const v = await read($, view)
     if (!v?.state) return <ui.Text dimColor>Loading goals…</ui.Text>
-    return paneTree(ui as never, { ...v, state: v.state }, e.props.bodyColumns, {
+    const state = v.state
+    const busy = Object.keys(state.active ?? {}).length > 0
+    const nowMs = busy ? await $.clock.now() : 0
+    const f = busy ? ((await read($, frame)) ?? 0) : 0
+    return paneTree(ui as never, { ...v, state }, e.props.bodyColumns, {
+      spin: key => (busy && isActive(state, key, nowMs) ? SPINNER[f % SPINNER.length]! : null),
       focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
       toggle: label => void update($, view, x => (x ? { ...x, expanded: x.expanded === label ? null : label } : x)),

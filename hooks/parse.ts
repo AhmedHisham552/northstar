@@ -62,6 +62,19 @@ export function parse(args: string): Cmd {
       return dotted ? op(withNote({ kind: 'tick', goal: Number(dotted[1]), sub: Number(dotted[2]) })) : HELP
     case 'done':
       return n ? op(withNote({ kind: 'done', goal: n })) : HELP
+    case 'start':
+    case 'stop': {
+      const ops: Op[] = []
+      for (const t of words.slice(1).join(' ').split(/[\s,[\]]+/).filter(Boolean)) {
+        const d = t.match(/^#?(\d+)\.(\d+)$/)
+        const g = goalNo(t)
+        if (d) ops.push({ kind: cmd, goal: Number(d[1]), sub: Number(d[2]) })
+        else if (g) ops.push({ kind: cmd, goal: g })
+        else return HELP
+      }
+      if (!ops.length) return cmd === 'stop' ? { kind: 'ops', ops: [{ kind: 'stop' }] } : HELP
+      return { kind: 'ops', ops }
+    }
     case 'rm': {
       // One or many: `rm 5`, `rm 5, 6`, `rm [5,6]`, `rm 5 3.2`.
       const ops: Op[] = []

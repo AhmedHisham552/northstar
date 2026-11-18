@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { applyOp, emptyState, glyph, labelKey, progressOf, visibleGoals } from './model'
+import { applyOp, emptyState, glyph, isActive, labelKey, progressOf, visibleGoals } from './model'
 import type { State } from './model'
 
 const AT = '2026-11-18T10:00:00.000Z'
@@ -102,4 +102,25 @@ test('final-review: a tick with an explicit target state is a no-op when already
   const again = ok(applyOp(once.state, { kind: 'tick', goal: 1, sub: 1, done: true }, AT))
   expect(again.events).toEqual([])
   expect(again.state.goals[0]!.subs[0]!.done).toBe(true)
+})
+
+test('start and stop mark work in progress; ticking or finishing ends it', () => {
+  let s = ok(applyOp(seeded(), { kind: 'start', goal: 1, sub: 2 }, AT)).state
+  s = ok(applyOp(s, { kind: 'start', goal: 2 }, AT)).state
+  expect(Object.keys(s.active ?? {}).sort()).toEqual(['1.2', '2'])
+  expect(ok(applyOp(s, { kind: 'start', goal: 1, sub: 2 }, AT)).events).toEqual([])
+  s = ok(applyOp(s, { kind: 'tick', goal: 1, sub: 2 }, AT)).state
+  expect(Object.keys(s.active ?? {})).toEqual(['2'])
+  s = ok(applyOp(s, { kind: 'done', goal: 2 }, AT)).state
+  expect(s.active).toEqual({})
+  s = ok(applyOp(s, { kind: 'start', goal: 1 }, AT)).state
+  s = ok(applyOp(s, { kind: 'stop' }, AT)).state
+  expect(s.active).toEqual({})
+  expect(applyOp(s, { kind: 'start', goal: 1, sub: 9 }, AT)).toEqual({ error: 'no sub-task 1.9' })
+})
+
+test('isActive ignores marks older than 8 hours', () => {
+  const s = ok(applyOp(seeded(), { kind: 'start', goal: 1 }, '2026-11-18T01:00:00.000Z')).state
+  expect(isActive(s, '1', Date.parse('2026-11-18T08:59:00.000Z'))).toBe(true)
+  expect(isActive(s, '1', Date.parse('2026-11-18T09:01:00.000Z'))).toBe(false)
 })

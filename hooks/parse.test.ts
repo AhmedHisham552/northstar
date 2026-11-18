@@ -71,3 +71,10 @@ test('rm takes a list of goals and sub-tasks', () => {
   expect(parse('rm 4')).toEqual({ kind: 'op', op: rm(4) })
   expect(parse('rm 4, x')).toEqual({ kind: 'help' })
 })
+
+test('start and stop', () => {
+  expect(parse('start 2.4')).toEqual({ kind: 'ops', ops: [{ kind: 'start', goal: 2, sub: 4 }] })
+  expect(parse('start 2.4, 3')).toEqual({ kind: 'ops', ops: [{ kind: 'start', goal: 2, sub: 4 }, { kind: 'start', goal: 3 }] })
+  expect(parse('stop 3')).toEqual({ kind: 'ops', ops: [{ kind: 'stop', goal: 3 }] })
+  expect(parse('stop')).toEqual({ kind: 'ops', ops: [{ kind: 'stop' }] })
+})

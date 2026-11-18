@@ -43,6 +43,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Side pane** that stays beside the chat, about 32 columns wide.
 - **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
+- **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.2 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
@@ -63,6 +64,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/goals done 3` | Mark goal #3 done |
 | `/goals rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
 | `/goals focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
+| `/goals start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
 | `/goals tag 3 @label` | Move a goal to a label (`@general` to clear) |
 | `/goals @label` | Open or close another label in the pane (or click its header) |
 | `/goals yesterday` / `today` / `week` | Summary for that period |

@@ -31,6 +31,7 @@ test('the brief lists open goals with sub-tasks and tells Claude when to update'
   expect(b).not.toContain('Done thing')
   expect(b).toContain('update_goals')
   expect(b).toContain('focus')
+  expect(b).toContain('"start <n>.<m>"')
 })
 
 test('the hint tail names the focused goal, and is empty without focus', () => {
@@ -46,6 +47,7 @@ test('the work prompt aligns first, then dispatches each goal', () => {
   expect(p).toContain('update_goals')
   expect(p).toMatch(/Phase 1, align/)
   expect(p).toMatch(/Phase 2, dispatch/)
+  expect(p).toContain('start <n>.<m>')
 })
 
 test('work on chosen sub-tasks only, dispatched as workflows', () => {

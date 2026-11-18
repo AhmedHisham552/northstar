@@ -174,3 +174,16 @@ test('another label opens and closes from its header', async ($, on) => {
   expect(await button(ui, 'g4')).toBe('○ #4 Other repo work')
   await ui.unmount()
 })
+
+test('work in progress spins in the pane', async ($, on) => {
+  const r = applyOp(state, { kind: 'start', goal: 1, sub: 2 }, AT)
+  const r2 = 'error' in r ? r : applyOp(r.state, { kind: 'start', goal: 2 }, AT)
+  if ('error' in r2) throw new Error(r2.error)
+  on('state.get', (_, e) => ((e as { key: string }).key === 'frame' ? { value: { value: 3, version: 1 } } : view(r2.state)) as never)
+  on('clock.now', () => ({ value: Date.parse(AT) + 60_000 }) as never)
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await button(ui, 's1.2')).toContain('⠸ 1.2 Pricing call')
+  expect(await button(ui, 'g2')).toMatch(/^⠸ #2 Demo prep/)
+  expect(await button(ui, 's1.1')).toContain('✓ 1.1')
+  await ui.unmount()
+})

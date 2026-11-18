@@ -6,7 +6,7 @@ export type { View }
 type Shown = View & { state: State }
 // The surface's element table, as $.ui.resolve(e) returns it.
 type Els = { Box: any; Text: any; Button: any }
-type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void; toggle: (label: string) => void }
+type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void; toggle: (label: string) => void; spin: (key: string) => string | null }
 
 const ACCENT = 'claude'
 
@@ -18,8 +18,11 @@ const row = (left: string, right: string, width: number) => (right ? `${fit(left
 
 export const focusedGoal = focused
 
+// A spinner frame replaces the glyph while the goal is being worked on.
+const goalMark = (g: Goal, act: Act) => (g.doneAt ? glyph(100) : act.spin(String(g.id)) ?? glyph(progressOf(g)))
+
 function goalRow(ui: Els, g: Goal, width: number, act: Act) {
-  const line = row(`${glyph(progressOf(g))} #${g.id} ${g.text}`, amount(g), width)
+  const line = row(`${goalMark(g, act)} #${g.id} ${g.text}`, amount(g), width)
   return g.doneAt ? (
     <ui.Text color="success">{line}</ui.Text>
   ) : (
@@ -66,9 +69,9 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
             <Text color={ACCENT} bold>NOW</Text>
             {amount(now) && <Text color={ACCENT}>{amount(now)}</Text>}
           </Box>
-          <Text bold wrap="wrap">{`${glyph(progressOf(now))} #${now.id} ${now.text}`}</Text>
+          <Text bold wrap="wrap">{`${goalMark(now, act)} #${now.id} ${now.text}`}</Text>
           {now.subs.map(s => (
-            <Button key={`s${now.id}.${s.id}`} plain dimColor={s.done} label={fit(`  ${s.done ? '✓' : '○'} ${now.id}.${s.id} ${s.text}`, width)} onPress={() => act.tick(now.id, s.id, !s.done)} />
+            <Button key={`s${now.id}.${s.id}`} plain dimColor={s.done} label={fit(`  ${s.done ? '✓' : act.spin(`${now.id}.${s.id}`) ?? '○'} ${now.id}.${s.id} ${s.text}`, width)} onPress={() => act.tick(now.id, s.id, !s.done)} />
           ))}
         </Box>
       )}
