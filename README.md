@@ -21,7 +21,7 @@ MY-APP
 GENERAL
 ◕ #2 Prepare demo            3/4
 
-+2 in other-repo
+▸ OTHER-REPO                 2
 ```
 
 ## Quick start
@@ -44,10 +44,10 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
-- **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other labels fold into one line. Untagged goals are **General**.
+- **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
-- **Work on goals from one session.** `/goals work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
+- **Work on goals from one session.** `/goals:work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
 - **Ask about your log.** Claude answers "what did I do this week?" from your log.
 
 ## Usage
@@ -64,10 +64,10 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/goals rm 3` / `rm 3.2` | Remove a goal or a sub-task |
 | `/goals focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
 | `/goals tag 3 @label` | Move a goal to a label (`@general` to clear) |
-| `/goals @label` | Expand another label in the pane |
+| `/goals @label` | Open or close another label in the pane (or click its header) |
 | `/goals yesterday` / `today` / `week` | Summary for that period |
 | `/goals from 2026-11-01 to 2026-11-15` | Summary for any date range |
-| `/goals work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
+| `/goals:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
 | `/goals done-list` | List finished goals |
 | `/goals` | Open the pane and show help |
 
@@ -79,7 +79,7 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Working on goals
 
-`/goals work <n> [<n> …]` turns this session into an orchestrator for those goals:
+`/goals:work <n> [<n> …]` (a skill that ships with the plugin) turns this session into an orchestrator for those goals:
 
 1. **Align.** Claude reads what it can from the code, docs and tools, adds sub-tasks to any goal without them, then asks you every question it needs answered, in one message.
 2. **Dispatch.** Once you confirm, it starts one background agent per goal with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.

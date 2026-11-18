@@ -28,7 +28,7 @@ export const HELP = [
   '/goals rm <n> | rm <n>.<m>       remove a goal or sub-task',
   '/goals focus <n> | focus off     set or clear the NOW goal',
   '/goals tag <n> @label|@general   move a goal to a label',
-  '/goals @label                    expand a label in the pane',
+  '/goals @label                    open / close a label in the pane',
   '/goals yesterday | today | week  summary with a ready-to-post update',
   '/goals from YYYY-MM-DD to YYYY-MM-DD',
   '/goals:work <n> [<n> …]          align here, then dispatch agents per goal',
@@ -82,8 +82,8 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
     case 'op':
       return change($, o, cmd.op)
     case 'show':
-      await update($, view, v => (v ? { ...v, expanded: cmd.label } : v))
-      return `Showing @${cmd.label} in the pane.`
+      await update($, view, v => (v ? { ...v, expanded: v.expanded === cmd.label ? null : cmd.label } : v))
+      return `Toggled @${cmd.label} in the pane.`
     case 'doneList': {
       const s = await loadState(engineIo($), await dir($, o))
       const done = s.goals.filter(g => g.doneAt)
@@ -163,6 +163,7 @@ export const register: Register = (on, options) => {
     return paneTree(ui as never, { ...v, state: v.state }, e.props.bodyColumns, {
       focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
+      toggle: label => void update($, view, x => (x ? { ...x, expanded: x.expanded === label ? null : label } : x)),
     })
   })
 

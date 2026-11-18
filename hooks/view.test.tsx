@@ -57,7 +57,7 @@ test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names',
     expect(await button(ui, 's1.1')).toContain('✓ 1.1 Read docs')
     expect(await texts(ui, /^SHOP$/)).toBe('SHOP')
     expect(await texts(ui, /^GENERAL$/)).toBe('GENERAL')
-    expect(await texts(ui, /\+1 in other/)).toBe('+1 in other')
+    expect(await button(ui, 'lother')).toMatch(/^▸ OTHER +1$/)
     const long = (await button(ui, 'g5'))!
     expect(long.length).toBeLessThanOrEqual(32)
     expect(long).toMatch(/…$/)
@@ -148,5 +148,13 @@ test('Claude gets the goals with each prompt, and the hint line gets the NOW tai
 
   const ui = await $.ui.mount({ plugin: 'goals', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
   expect(seen).toBe('· NOW ◑ #1 Card research 1/2')
+  await ui.unmount()
+})
+
+test('another label opens and closes from its header', async ($, on) => {
+  on('state.get', () => ({ value: { value: { state, label: 'shop', today: DAY, expanded: 'other' }, version: 1 } }))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await button(ui, 'lother')).toBe('▾ OTHER')
+  expect(await button(ui, 'g4')).toBe('○ #4 Other repo work')
   await ui.unmount()
 })

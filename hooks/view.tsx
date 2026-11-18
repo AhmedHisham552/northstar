@@ -6,7 +6,7 @@ export type { View }
 type Shown = View & { state: State }
 // The surface's element table, as $.ui.resolve(e) returns it.
 type Els = { Box: any; Text: any; Button: any }
-type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void }
+type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void; toggle: (label: string) => void }
 
 const ACCENT = 'claude'
 
@@ -52,10 +52,10 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const here = rest.filter(g => g.label === v.label)
   const general = rest.filter(g => g.label === null)
   if (here.length) groups.push([v.label.toUpperCase(), here])
-  if (v.expanded && v.expanded !== v.label) groups.push([v.expanded.toUpperCase(), rest.filter(g => g.label === v.expanded)])
   if (general.length) groups.push(['GENERAL', general])
-  const folded = new Map<string, number>()
-  for (const g of rest) if (g.label !== null && g.label !== v.label && g.label !== v.expanded) folded.set(g.label, (folded.get(g.label) ?? 0) + 1)
+  // Other repos' labels: a header to open and close, with their goals only while open.
+  const others = new Map<string, Goal[]>()
+  for (const g of rest) if (g.label !== null && g.label !== v.label) others.set(g.label, [...(others.get(g.label) ?? []), g])
 
   return (
     <Box flexDirection="column">
@@ -78,9 +78,16 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
           {list.map(g => goalRow(ui, g, width, act))}
         </Box>
       ))}
-      {[...folded].map(([label, n]) => (
-        <Text color="subtle">{fit(`+${n} in ${label}`, width)}</Text>
-      ))}
+      {[...others].map(([label, list]) =>
+        v.expanded === label ? (
+          <Box flexDirection="column" marginBottom={1}>
+            <Button key={`l${label}`} plain dimColor label={`▾ ${label.toUpperCase()}`} onPress={() => act.toggle(label)} />
+            {list.map(g => goalRow(ui, g, width, act))}
+          </Box>
+        ) : (
+          <Button key={`l${label}`} plain dimColor label={row(`▸ ${label.toUpperCase()}`, String(list.length), width)} onPress={() => act.toggle(label)} />
+        ),
+      )}
     </Box>
   )
 }
