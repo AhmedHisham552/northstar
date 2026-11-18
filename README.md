@@ -42,7 +42,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and a one-line strip above the prompt keeps it in view.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other labels fold into one line. Untagged goals are **General**.
-- **Change log.** Every change is recorded with its time and an optional note.
+- **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
 - **Claude can use it too.** Claude ticks sub-tasks when its work completes them and answers "what did I do this week?" from your log.
 
@@ -95,7 +95,7 @@ Today I'll add screenshots to the guide.
 - **DONE:** goals and sub-tasks finished in the period, with their notes.
 - **MOVED:** goals that made progress but are not finished.
 - **STILL OPEN:** goals that did not move.
-- **POST:** a short update written by a small Claude model from the log above, and only from it.
+- **POST:** a short update written by a small Claude model from the log above, and only from it: a standup update for a day, a short review for `week` and date ranges.
 
 `week` and date ranges group everything by label.
 
@@ -109,7 +109,7 @@ Today I'll add screenshots to the guide.
 - **Labels.** `@here` resolves to the folder name of the repo's main checkout (`git rev-parse --git-common-dir`), so worktrees share a label. Outside git it is the current folder's name.
 - **Focus.** One NOW goal per label. A session shows the focus of its repo's label, or General's when that label has none.
 - **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/goals done-list`.
-- **Two sessions at once.** Each change re-reads the files before writing, so open sessions don't overwrite each other.
+- **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. A pane only refreshes on its own session's changes, so run `/goals` to refresh it. In the rare case two sessions write in the same instant, one log line can be lost.
 
 ## Configuration
 
@@ -136,7 +136,7 @@ Your goals and log stay on your machine, in `dataDir`. The only thing sent anywh
 
 - **The pane is not beside the chat.** Use the fullscreen layout (above) and a terminal at least 110 columns wide, or open the pane with `/goals`.
 - **The circles look misaligned.** Some fonts draw `◔ ◑ ◕` at a different width. Please open an issue with your terminal and font.
-- **My v0.1 goals are gone.** On first start, v0.2 imports them from the old storage into `dataDir`. If you changed `dataDir` before that first start, set it back, restart, and then move the folder.
+- **My v0.1 goals are gone.** v0.2 imports them once, on its first start, into the `dataDir` set at that moment. If you changed `dataDir` later, move the files from the old folder into the new one.
 
 ## Development
 

@@ -62,5 +62,11 @@ test('grouping by label puts each label under its own heading', () => {
 
 test('RF4: an empty period says so', () => {
   expect(summarize(LOG, new Date(2026, 10, 19), new Date(2026, 10, 20), 'Thu 19 Nov', false)).toBe('Nothing logged for Thu 19 Nov.')
-  expect(postPrompt('LOG')).toContain('LOG')
+  expect(postPrompt('LOG', 'day')).toContain('LOG')
+})
+
+test('final-review: the post prompt fits the period', () => {
+  expect(postPrompt('LOG', 'day')).toContain('standup')
+  expect(postPrompt('LOG', 'span')).toContain('weekly review')
+  expect(postPrompt('LOG', 'span')).not.toContain('Yesterday')
 })

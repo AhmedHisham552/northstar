@@ -95,3 +95,11 @@ test('finished goals show only on the day they were finished', () => {
   s = ok(applyOp(s, { kind: 'done', goal: 2 }, '2026-11-18T09:00:00.000Z')).state
   expect(visibleGoals(s, '2026-11-18').map(g => g.text)).toEqual(['new', 'open'])
 })
+
+test('final-review: a tick with an explicit target state is a no-op when already there', () => {
+  const s = seeded()
+  const once = ok(applyOp(s, { kind: 'tick', goal: 1, sub: 1, done: true }, AT))
+  const again = ok(applyOp(once.state, { kind: 'tick', goal: 1, sub: 1, done: true }, AT))
+  expect(again.events).toEqual([])
+  expect(again.state.goals[0]!.subs[0]!.done).toBe(true)
+})

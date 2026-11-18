@@ -5,7 +5,7 @@ export type { View }
 type Shown = View & { state: State }
 // The surface's element table, as $.ui.resolve(e) returns it.
 type Els = { Box: any; Text: any; Button: any }
-type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number) => void }
+type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void }
 
 export const fit = (text: string, width: number) => (text.length <= width ? text : `${text.slice(0, Math.max(0, width - 1))}…`)
 
@@ -48,7 +48,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
           <Text bold>NOW</Text>
           <Text bold>{row(`${glyph(progressOf(now))} #${now.id} ${now.text}`, amount(now), width)}</Text>
           {now.subs.map(s => (
-            <Button key={`s${now.id}.${s.id}`} plain dimColor={s.done} label={fit(`   ${s.done ? '✓' : '○'} ${now.id}.${s.id} ${s.text}`, width)} onPress={() => act.tick(now.id, s.id)} />
+            <Button key={`s${now.id}.${s.id}`} plain dimColor={s.done} label={fit(`   ${s.done ? '✓' : '○'} ${now.id}.${s.id} ${s.text}`, width)} onPress={() => act.tick(now.id, s.id, !s.done)} />
           ))}
         </Box>
       )}

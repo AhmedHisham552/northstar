@@ -45,3 +45,9 @@ test('views and summaries', () => {
   expect(parse('from 2026-11-40 to x')).toEqual({ kind: 'help' })
   expect(parse('tick x')).toEqual({ kind: 'help' })
 })
+
+test('final-review: v1 commands do not become goals', () => {
+  expect(parse('clear')).toEqual({ kind: 'help' })
+  expect(parse('history 7')).toEqual({ kind: 'help' })
+  expect(parse('list')).toEqual({ kind: 'help' })
+})

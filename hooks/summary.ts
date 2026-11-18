@@ -132,7 +132,9 @@ export function summarize(events: Event[], from: Date, to: Date, title: string, 
   return out.join('\n')
 }
 
-export const postPrompt = (log: string) =>
-  'Rewrite this goal log as a 2-4 sentence standup update in plain first person ("Yesterday I...", "Today..."). ' +
+export const postPrompt = (log: string, kind: 'day' | 'span') =>
+  (kind === 'day'
+    ? 'Rewrite this goal log as a 2-4 sentence standup update in plain first person ("Yesterday I...", "Today..."). '
+    : 'Rewrite this goal log as a short weekly review in plain first person: 3-5 sentences on what got done, what moved and what is still open, grouped by label where it helps. ') +
   'Use only facts in the log; do not invent work. No headings, no bullet points.\n\n' +
   log

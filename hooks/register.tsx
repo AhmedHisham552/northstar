@@ -53,12 +53,15 @@ async function change($: Engine, o: Opts, op: Op): Promise<string> {
     op.kind === 'focus' && op.label === '@here' ? { ...op, label } :
     op.kind === 'tag' && op.label === '@here' ? { ...op, label } : op
   const at = localIso(await now($))
-  const r = applyOp(await loadState(io, d), resolved, at)
+  const current = await loadState(io, d)
+  // `focus off` clears the focus NOW shows: the repo's, else General's.
+  const target: Op = resolved.kind === 'focus' && resolved.goal === null && current.focus[label] === undefined ? { ...resolved, label: null } : resolved
+  const r = applyOp(current, target, at)
   if ('error' in r) return r.error
   await saveState(io, d, r.state)
   for (const e of r.events) await appendEvent(io, d, e)
   await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), expanded: old?.expanded ?? null }))
-  if (op.kind === 'focus' && op.goal === null) return `Focus cleared for ${labelKey(resolved.kind === 'focus' ? resolved.label : null)}.`
+  if (target.kind === 'focus' && target.goal === null) return `Focus cleared for ${labelKey(target.label)}.`
   return r.events.map(e => `${e.type.replace('.', ' ')}: ${e.sub ? `${e.goal}.${e.sub}` : `#${e.goal}`} ${e.text}`).join('\n')
 }
 
@@ -66,7 +69,7 @@ async function summary($: Engine, o: Opts, range: { from: Date; to: Date; title:
   const events = await readEvents(engineIo($), await dir($, o), localDay(range.to))
   const log = summarize(events, range.from, range.to, range.title, byLabel)
   if (log.startsWith('Nothing logged')) return log
-  const post = await $.model.complete({ model: MODEL, prompt: postPrompt(log), maxTokens: 300 })
+  const post = await $.model.complete({ model: MODEL, prompt: postPrompt(log, byLabel ? 'span' : 'day'), maxTokens: 300 })
   return `${log}\n\nPOST\n${post.isAnswered ? post.text.trim() : '(post could not be generated)'}`
 }
 
@@ -135,7 +138,7 @@ export const register: Register = (on, options) => {
     if (!v?.state) return <ui.Text dimColor>Loading goals…</ui.Text>
     return paneTree(ui as never, { ...v, state: v.state }, e.props.bodyColumns, {
       focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
-      tick: (goal, sub) => void change($, o, { kind: 'tick', goal, sub }),
+      tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
     })
   })
 

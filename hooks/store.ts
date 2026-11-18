@@ -13,6 +13,7 @@ export type Io = {
   write: (path: string, text: string) => Promise<void>
   list: (path: string) => Promise<string[]>
   storeGet: (key: string) => Promise<unknown>
+  storeSet: (key: string, value: unknown) => Promise<void>
 }
 
 export function engineIo($: Engine): Io {
@@ -23,6 +24,7 @@ export function engineIo($: Engine): Io {
     write: (path, text) => $.fs.write(path, text),
     list: async path => (await $.fs.list(path)).map(f => f.name),
     storeGet: key => $.store.get(key),
+    storeSet: (key, value) => $.store.set(key, value),
   }
 }
 
@@ -74,7 +76,7 @@ type V1Goal = { id: number; text: string; progress: number }
 
 // One-time import of v1 data kept in the plugin's $.store; the store itself is left as is.
 export async function migrate(io: Io, dir: string, now: string): Promise<boolean> {
-  if (await io.exists(`${dir}/goals.json`)) return false
+  if ((await io.storeGet('migrated')) || (await io.exists(`${dir}/goals.json`))) return false
   const goals = (await io.storeGet('goals')) as V1Goal[] | undefined
   if (!goals?.length) return false
   const history = ((await io.storeGet('history')) as Record<string, V1Goal[]> | undefined) ?? {}
@@ -98,13 +100,20 @@ export async function migrate(io: Io, dir: string, now: string): Promise<boolean
   }
   for (const g of goals) add(g, start)
   for (const day of days) for (const g of history[day] ?? []) (add(g, start), move(g, `${day}T23:59:00`))
+  const current = new Set(goals.map(g => g.id))
+  for (const day of days) for (const g of history[day] ?? []) if (!current.has(g.id) && seen.has(g.id)) {
+    seen.delete(g.id)
+    events.push({ at: now, type: 'goal.remove', goal: g.id, label: null, text: g.text })
+  }
   for (const g of goals) {
     move(g, now)
+    if (g.progress >= 100) events.push({ at: now, type: 'goal.done', goal: g.id, label: null, text: g.text })
     const goal: Goal = { id: g.id, text: g.text, label: null, progress: g.progress, createdAt: start, doneAt: g.progress >= 100 ? now : null, nextSub: 1, subs: [] }
     state.goals.push(goal)
   }
   events.push({ at: now, type: 'migrated', goal: 0, label: null, text: `${goals.length} goals from v1` })
   await saveState(io, dir, state)
   for (const e of events) await appendEvent(io, dir, e)
+  await io.storeSet('migrated', dir)
   return true
 }

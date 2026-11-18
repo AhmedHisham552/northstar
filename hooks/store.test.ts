@@ -6,6 +6,7 @@ import { appendEvent, dataDir, loadState, migrate, readEvents, saveState } from 
 import type { Io } from './store'
 
 function memIo(store: Record<string, unknown> = {}) {
+  store = { ...store }
   const files = new Map<string, string>()
   const io: Io = {
     home: async () => '/home/u',
@@ -17,6 +18,7 @@ function memIo(store: Record<string, unknown> = {}) {
     write: async (p, t) => void files.set(p, t),
     list: async p => [...files.keys()].filter(k => k.startsWith(p + '/') && !k.slice(p.length + 1).includes('/')).map(k => k.slice(p.length + 1)),
     storeGet: async k => store[k],
+    storeSet: async (k, v) => void (store[k] = v),
   }
   return { io, files }
 }
@@ -69,4 +71,16 @@ test('migrates v1 goals and history once', async () => {
   expect(types).toEqual(['goal.add', 'goal.progress', 'goal.progress', 'migrated'])
   expect(files.has('/d/goals.json')).toBe(true)
   expect(await migrate(io, '/d', '2026-11-18T10:00:00+02:00')).toBe(false)
+})
+
+test('final-review: migration closes finished and dropped v1 goals, and runs only once ever', async () => {
+  const { io } = memIo({
+    goals: [{ id: 1, text: 'A', progress: 100 }],
+    history: { '2026-11-17': [{ id: 1, text: 'A', progress: 50 }, { id: 2, text: 'Gone', progress: 0 }] },
+  })
+  expect(await migrate(io, '/d', '2026-11-18T10:00:00+02:00')).toBe(true)
+  const types = (await readEvents(io, '/d', '2026-12-01')).map(e => `${e.type}:${e.goal}`)
+  expect(types).toContain('goal.done:1')
+  expect(types).toContain('goal.remove:2')
+  expect(await migrate(io, '/elsewhere', '2026-11-19T10:00:00+02:00')).toBe(false)
 })

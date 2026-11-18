@@ -16,7 +16,7 @@ export type Event = {
 export type Op =
   | { kind: 'add'; texts: string[]; label: string | null }
   | { kind: 'sub'; goal: number; texts: string[] }
-  | { kind: 'tick'; goal: number; sub: number; note?: string }
+  | { kind: 'tick'; goal: number; sub: number; note?: string; done?: boolean }
   | { kind: 'progress'; goal: number; value: number; note?: string }
   | { kind: 'done'; goal: number; note?: string }
   | { kind: 'rm'; goal: number; sub?: number }
@@ -92,6 +92,8 @@ export function applyOp(input: State, op: Op, at: string): Result {
     case 'tick': {
       const sub = g.subs.find(x => x.id === op.sub)
       if (!sub) return { error: `no sub-task ${g.id}.${op.sub}` }
+      // The pane sends the state it showed, so a stale pane can't undo another session's tick.
+      if (op.done !== undefined && op.done === sub.done) return { state: s, events }
       sub.done = !sub.done
       log(g, sub.done ? 'sub.done' : 'sub.undone', { sub: sub.id, text: sub.text, ...(op.note ? { note: op.note } : {}) })
       if (sub.done && !g.doneAt && g.subs.every(x => x.done)) finish()

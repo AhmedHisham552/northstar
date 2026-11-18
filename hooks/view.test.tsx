@@ -130,4 +130,11 @@ test('commands write goals.json and the month log, summaries add a post', async 
   expect(prompts[0]).toContain('Read docs')
   expect(await run('yesterday')).toBe('Nothing logged for Tue 17 Nov.')
   expect(prompts).toHaveLength(1)
+
+  // final-review: focus off clears the focus NOW actually shows (General when the repo has none)
+  await run('focus off')
+  await run('add Write post')
+  await run('focus 3')
+  await run('focus off')
+  expect(JSON.parse(files.get('/home/u/.claude-goals/goals.json')!).focus).toEqual({})
 })
