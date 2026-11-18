@@ -1,15 +1,6 @@
-export type Sub = { id: number; text: string; done: boolean }
-export type Goal = {
-  id: number
-  text: string
-  label: string | null
-  progress: number | null
-  createdAt: string
-  doneAt: string | null
-  nextSub: number
-  subs: Sub[]
-}
-export type State = { version: 2; nextId: number; focus: Record<string, number>; goals: Goal[] }
+import type { Goal, State, Sub } from '../types'
+
+export type { Goal, State, Sub }
 export type Event = {
   at: string
   type: string

@@ -1,0 +1,133 @@
+import { expect, test } from 'claude-code/testing'
+
+import { applyOp, emptyState } from './model'
+import type { Op, State } from './model'
+
+const DAY = '2026-11-18'
+const AT = `${DAY}T10:00:00+02:00`
+
+function build(ops: Op[], at = AT): State {
+  let s = emptyState()
+  for (const op of ops) {
+    const r = applyOp(s, op, at)
+    if ('error' in r) throw new Error(r.error)
+    s = r.state
+  }
+  return s
+}
+
+const LONG = 'A very long goal title that will never fit in a narrow side pane at all'
+const state = build([
+  { kind: 'add', texts: ['Card research', 'Demo prep'], label: 'shop' },
+  { kind: 'add', texts: ['Write post'], label: null },
+  { kind: 'add', texts: ['Other repo work'], label: 'other' },
+  { kind: 'add', texts: [LONG], label: null },
+  { kind: 'sub', goal: 1, texts: ['Read docs', 'Pricing call'] },
+  { kind: 'tick', goal: 1, sub: 1 },
+  { kind: 'focus', goal: 1, label: null },
+])
+const view = (s: State) => ({ value: { value: { state: s, label: 'shop', today: DAY, expanded: null }, version: 1 } })
+
+const PANE = (surface: 'terminal' | 'desktop') =>
+  ({
+    plugin: 'goals', surface, component: 'Pane', requestId: 'goals',
+    props: { title: 'Goals', isFocused: false, bodyColumns: 32, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
+  }) as const
+
+type Found = { text?: string; label?: string; props?: { label?: string } }
+const texts = async (ui: { find: (q: object) => Promise<Found | undefined> }, re: RegExp) => {
+  const t = await ui.find({ type: 'Text', text: re })
+  if (t) return t.text
+  return undefined
+}
+const button = async (ui: { find: (q: object) => Promise<Found | undefined> }, key: string) => {
+  const b = await ui.find({ type: 'Button', key })
+  return b?.label ?? b?.props?.label ?? b?.text
+}
+
+test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names', async ($, on) => {
+  on('state.get', () => view(state))
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount(PANE(surface))
+    expect(await texts(ui, /^NOW$/)).toBe('NOW')
+    expect(await texts(ui, /#1 Card research/)).toMatch(/◑ #1 Card research +1\/2$/)
+    expect(await button(ui, 'g2')).toMatch(/○ #2 Demo prep +0%$/)
+    expect(await button(ui, 's1.1')).toContain('✓ 1.1 Read docs')
+    expect(await texts(ui, /^SHOP$/)).toBe('SHOP')
+    expect(await texts(ui, /^GENERAL$/)).toBe('GENERAL')
+    expect(await texts(ui, /\+1 in other/)).toBe('+1 in other')
+    const long = (await button(ui, 'g5'))!
+    expect(long.length).toBeLessThanOrEqual(32)
+    expect(long).toMatch(/…\s+0%$/)
+    await ui.unmount()
+  }
+})
+
+test('goals finished on an earlier day leave the pane', async ($, on) => {
+  const s = build([{ kind: 'add', texts: ['Old', 'Today'], label: null }])
+  const old = applyOp(s, { kind: 'done', goal: 1 }, '2026-11-17T10:00:00+02:00')
+  if ('error' in old) throw new Error(old.error)
+  const both = applyOp(old.state, { kind: 'done', goal: 2 }, AT)
+  if ('error' in both) throw new Error(both.error)
+  on('state.get', () => view(both.state))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await texts(ui, /Old/)).toBeUndefined()
+  expect(await texts(ui, /#2 Today/)).toContain('✓')
+  await ui.unmount()
+})
+
+const STRIP = { plugin: 'goals', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 3, bodyColumns: 80 } } as never
+
+test('the strip shows the focused goal', async ($, on) => {
+  on('state.get', () => view(state))
+  const ui = await $.ui.mount(STRIP)
+  expect(await texts(ui, /#1 Card research/)).toContain('1/2')
+  await ui.unmount()
+})
+
+test('no focus, no strip', async ($, on) => {
+  on('state.get', () => view(build([{ kind: 'add', texts: ['A'], label: null }])))
+  const ui = await $.ui.mount(STRIP)
+  expect(await texts(ui, /#1 A/)).toBeUndefined()
+  await ui.unmount()
+})
+
+test('commands write goals.json and the month log, summaries add a post', async ($, on) => {
+  const files = new Map<string, string>()
+  const prompts: string[] = []
+  on('env.get', () => ({ value: '/home/u' }))
+  on('fs.exists', (_, e) => ({ value: files.has(e.path) || [...files.keys()].some(k => k.startsWith(e.path + '/')) }))
+  on('fs.read', (_, e) => ({ value: files.get(e.path) ?? '' }))
+  on('fs.write', (_, e) => (files.set(e.path, e.text), { value: undefined }))
+  on('fs.list', (_, e) => ({ value: [...files.keys()].filter(k => k.startsWith(e.path + '/')).map(k => ({ name: k.slice(e.path.length + 1), kind: 'file' as const, size: 1, mtimeMs: 0, isLink: false })) }))
+  on('store.get', () => ({ value: undefined }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '/home/u/shop/.git\n', stderr: '' } }) as never)
+  on('clock.now', () => ({ value: new Date(2026, 10, 18, 10).getTime() }))
+  on('command.register', () => ({ value: { command: 'goals' } }))
+  on('tool.register', () => ({ value: {} }) as never)
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('model.complete', (_, e) => (prompts.push(String(e.prompt)), { value: { isAnswered: true, text: 'Today I ticked Read docs.' } }) as never)
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/home/u/shop', surface: 'terminal', isInteractive: true })
+  const run = async (args: string) => ((await $.command.run({ command: 'goals', args } as never)) as unknown as { text: string }).text
+  await run('add @here Card research; Demo prep')
+  await run('sub 1 Read docs; Pricing call')
+  await run('tick 1.1 "quick win"')
+  expect(await run('tick 9.9')).toBe('no goal #9')
+  await run('focus 1')
+
+  const saved = JSON.parse(files.get('/home/u/.claude-goals/goals.json')!)
+  expect(saved.focus).toEqual({ shop: 1 })
+  expect(saved.goals[0]).toMatchObject({ id: 1, label: 'shop', subs: [{ done: true }, { done: false }] })
+  const log = files.get('/home/u/.claude-goals/log/2026-11.jsonl')!.trim().split('\n').map(l => JSON.parse(l).type)
+  expect(log).toEqual(['goal.add', 'goal.add', 'sub.add', 'sub.add', 'sub.done', 'goal.focus'])
+
+  const today = await run('today')
+  expect(today).toContain('DONE        ✓ Read docs (Card research)')
+  expect(today).toContain('quick win')
+  expect(today).toContain('POST\nToday I ticked Read docs.')
+  expect(prompts[0]).toContain('Read docs')
+  expect(await run('yesterday')).toBe('Nothing logged for Tue 17 Nov.')
+  expect(prompts).toHaveLength(1)
+})

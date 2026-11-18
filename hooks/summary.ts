@@ -25,7 +25,8 @@ const workdays = (w: WorkWeek) => (w === 'mon-fri' ? [1, 2, 3, 4, 5] : [0, 1, 2,
 
 export function periodRange(kind: 'yesterday' | 'today' | 'week', now: Date, workWeek: WorkWeek): Range {
   const today = midnight(now)
-  if (kind === 'today') return { from: today, to: now, title: fmtDay(today) }
+  const end = new Date(now.getTime() + 1) // include what was logged this very millisecond
+  if (kind === 'today') return { from: today, to: end, title: fmtDay(today) }
   if (kind === 'yesterday') {
     let day = addDays(today, -1)
     while (!workdays(workWeek).includes(day.getDay())) day = addDays(day, -1)
@@ -33,7 +34,7 @@ export function periodRange(kind: 'yesterday' | 'today' | 'week', now: Date, wor
   }
   const first = workdays(workWeek)[0]!
   const start = addDays(today, -((today.getDay() - first + 7) % 7))
-  return { from: start, to: now, title: `${fmtDay(start)} – ${fmtDay(today)}` }
+  return { from: start, to: end, title: `${fmtDay(start)} – ${fmtDay(today)}` }
 }
 
 export function dayRange(from: string, to: string): Range {

@@ -1,12 +1,30 @@
 {
   "name": "goals",
-  "version": "0.1.0",
-  "description": "A side pane of your own goals with a progress bar each, kept across sessions; /goals to manage them",
+  "version": "0.2.0",
+  "description": "A goals pane for Claude Code: focus, sub-tasks, labels per repo, and standup/weekly summaries from a change log",
   "license": "MIT",
   "types": "./types/index.d.ts",
   "author": {
     "name": "Ahmed Hisham",
     "url": "https://github.com/AhmedHisham552"
   },
-  "repository": "https://github.com/AhmedHisham552/claude-goals"
+  "repository": "https://github.com/AhmedHisham552/claude-goals",
+  "userConfig": {
+    "dataDir": {
+      "type": "string",
+      "title": "Data folder",
+      "description": "Where goals.json and the log/ folder are kept",
+      "default": "~/.claude-goals"
+    },
+    "workWeek": {
+      "type": "string",
+      "title": "Work week",
+      "description": "Which days count as working days for \"yesterday\" and \"week\"",
+      "options": [
+        "sun-thu",
+        "mon-fri"
+      ],
+      "default": "sun-thu"
+    }
+  }
 }

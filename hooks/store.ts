@@ -17,12 +17,12 @@ export type Io = {
 
 export function engineIo($: Engine): Io {
   return {
-    home: () => io.home(),
-    exists: path => io.exists(path),
-    read: async path => (await io.read(path)) as string,
-    write: (path, text) => io.write(path, text),
+    home: () => $.env.get('HOME'),
+    exists: path => $.fs.exists(path),
+    read: async path => (await $.fs.read(path)) as string,
+    write: (path, text) => $.fs.write(path, text),
     list: async path => (await $.fs.list(path)).map(f => f.name),
-    storeGet: key => io.storeGet(key),
+    storeGet: key => $.store.get(key),
   }
 }
 

@@ -1,152 +1,147 @@
 import { atom, read, update } from 'claude-code'
-import type { Hook, Register } from 'claude-code'
+import type { Register } from 'claude-code'
 
-type Engine = Parameters<Hook<'session.start'>>[0]
-
-import type { Goal } from '../types'
+import { applyOp, labelKey } from './model'
+import type { Op } from './model'
+import { repoLabel } from './label'
+import { parse } from './parse'
+import type { Cmd } from './parse'
+import { appendEvent, dataDir, engineIo, loadState, migrate, readEvents, saveState } from './store'
+import type { Engine } from './store'
+import { dayRange, localDay, localIso, periodRange, postPrompt, summarize } from './summary'
+import type { WorkWeek } from './summary'
+import { paneTree, stripTree } from './view'
+import type { View } from './view'
 
 const PANE = 'goals'
 const TOOL = 'mcp__goals__update_goals'
-const goals = atom({ plugin: 'goals', key: 'list' } as const, [] as Goal[], { shape: 'goals-1' })
+const MODEL = 'claude-haiku-5-5'
+const view = atom({ plugin: 'goals', key: 'view' } as const, null as View | null)
 
-const HELP = [
-  '/goals add A; B; C   add goals ("add" optional)',
-  '/goals <n> <0-100>   set progress of goal n',
-  '/goals done <n>      mark goal n 100%',
-  '/goals rm <n>        remove goal n',
-  '/goals clear         remove all goals',
-  '/goals history [d]   goals per day, last d days (default 7)',
-  '/goals               open the pane',
+export const HELP = [
+  '/goals add [@label|@here] A; B   add goals (General by default)',
+  '/goals sub <n> A; B              add sub-tasks to goal n',
+  '/goals tick <n>.<m> ["note"]     tick / untick a sub-task',
+  '/goals <n> <0-100> ["note"]      set progress (goals without sub-tasks)',
+  '/goals done <n> ["note"]         mark goal n done',
+  '/goals rm <n> | rm <n>.<m>       remove a goal or sub-task',
+  '/goals focus <n> | focus off     set or clear the NOW goal',
+  '/goals tag <n> @label|@general   move a goal to a label',
+  '/goals @label                    expand a label in the pane',
+  '/goals yesterday | today | week  summary with a ready-to-post update',
+  '/goals from YYYY-MM-DD to YYYY-MM-DD',
+  '/goals done-list                 finished goals',
 ].join('\n')
 
-type Op = { action: 'add'; text: string } | { action: 'progress'; n: number; progress: number } | { action: 'remove'; n: number } | { action: 'clear' }
-type Cmd = Op | { action: 'history'; days: number }
+type Opts = { dataDir: string | undefined; workWeek: WorkWeek }
 
-const clamp = (p: number) => Math.max(0, Math.min(100, Math.round(p)))
+function dir($: Engine, o: Opts) {
+  return dataDir(engineIo($), o.dataDir)
+}
 
-function apply(list: Goal[], op: Op): Goal[] {
-  switch (op.action) {
-    case 'add':
-      return [...list, { id: Math.max(0, ...list.map(g => g.id)) + 1, text: op.text.trim(), progress: 0 }]
-    case 'progress':
-      return list.map((g, i) => (i + 1 === op.n ? { ...g, progress: clamp(op.progress) } : g))
-    case 'remove':
-      return list.filter((_, i) => i + 1 !== op.n)
-    case 'clear':
-      return []
+async function now($: Engine) {
+  return new Date(await $.clock.now())
+}
+
+async function change($: Engine, o: Opts, op: Op): Promise<string> {
+  const io = engineIo($)
+  const d = await dir($, o)
+  const v = await read($, view)
+  const label = v?.label ?? 'general'
+  const resolved: Op =
+    op.kind === 'add' && op.label === '@here' ? { ...op, label } :
+    op.kind === 'focus' && op.label === '@here' ? { ...op, label } :
+    op.kind === 'tag' && op.label === '@here' ? { ...op, label } : op
+  const at = localIso(await now($))
+  const r = applyOp(await loadState(io, d), resolved, at)
+  if ('error' in r) return r.error
+  await saveState(io, d, r.state)
+  for (const e of r.events) await appendEvent(io, d, e)
+  await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), expanded: old?.expanded ?? null }))
+  if (op.kind === 'focus' && op.goal === null) return `Focus cleared for ${labelKey(resolved.kind === 'focus' ? resolved.label : null)}.`
+  return r.events.map(e => `${e.type.replace('.', ' ')}: ${e.sub ? `${e.goal}.${e.sub}` : `#${e.goal}`} ${e.text}`).join('\n')
+}
+
+async function summary($: Engine, o: Opts, range: { from: Date; to: Date; title: string }, byLabel: boolean): Promise<string> {
+  const events = await readEvents(engineIo($), await dir($, o), localDay(range.to))
+  const log = summarize(events, range.from, range.to, range.title, byLabel)
+  if (log.startsWith('Nothing logged')) return log
+  const post = await $.model.complete({ model: MODEL, prompt: postPrompt(log), maxTokens: 300 })
+  return `${log}\n\nPOST\n${post.isAnswered ? post.text.trim() : '(post could not be generated)'}`
+}
+
+async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
+  switch (cmd.kind) {
+    case 'help':
+      return HELP
+    case 'op':
+      return change($, o, cmd.op)
+    case 'show':
+      await update($, view, v => (v ? { ...v, expanded: cmd.label } : v))
+      return `Showing @${cmd.label} in the pane.`
+    case 'doneList': {
+      const s = await loadState(engineIo($), await dir($, o))
+      const done = s.goals.filter(g => g.doneAt)
+      return done.length ? done.map(g => `✓ #${g.id} ${g.text}  (${g.doneAt!.slice(0, 10)})`).join('\n') : 'No finished goals.'
+    }
+    case 'summary':
+      return summary($, o, periodRange(cmd.period, await now($), o.workWeek), cmd.period === 'week')
+    case 'range':
+      return summary($, o, dayRange(cmd.from, cmd.to), true)
   }
 }
 
-function parse(args: string): Cmd[] | string {
-  const [cmd = '', ...rest] = args.trim().split(/\s+/)
-  const n = Number(rest[0])
-  if (cmd === 'done' && n) return [{ action: 'progress', n, progress: 100 }]
-  if (cmd === 'rm' && n) return [{ action: 'remove', n }]
-  if (cmd === 'clear') return [{ action: 'clear' }]
-  if (cmd === 'history') return [{ action: 'history', days: n || 7 }]
-  if (Number(cmd) && rest.length === 1 && !Number.isNaN(n)) return [{ action: 'progress', n: Number(cmd), progress: n }]
-  // `add A; B; C` or bare text adds goals, split on `;`.
-  const text = cmd === 'add' ? rest.join(' ') : args
-  const adds = text.split(';').map(t => t.trim()).filter(Boolean)
-  return adds.length ? adds.map(t => ({ action: 'add' as const, text: t })) : HELP
-}
+export const register: Register = (on, options) => {
+  const o: Opts = {
+    dataDir: typeof options.dataDir === 'string' ? options.dataDir : undefined,
+    workWeek: options.workWeek === 'mon-fri' ? 'mon-fri' : 'sun-thu',
+  }
 
-const bar = (p: number, w = 10) => '█'.repeat(Math.round((p / 100) * w)) + '░'.repeat(w - Math.round((p / 100) * w))
-
-type History = Record<string, Goal[]>
-
-async function today($: Engine) {
-  const d = new Date(await $.clock.now())
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-// $.store is the source of truth (shared by every session); the atom mirrors it so the pane redraws.
-// Re-reading the store first keeps a second open session from overwriting this one's goals.
-async function change($: Engine, op: Op) {
-  const saved = ((await $.store.get('goals')) as Goal[] | undefined) ?? []
-  const list = apply(saved, op)
-  await update($, goals, () => list)
-  await $.store.set('goals', list)
-  // ponytail: one snapshot per day (last state wins), no per-change log; add one if intra-day timing matters.
-  const history = ((await $.store.get('history')) as History | undefined) ?? {}
-  await $.store.set('history', { ...history, [await today($)]: list })
-}
-
-async function historyText($: Engine, days: number) {
-  const history = ((await $.store.get('history')) as History | undefined) ?? {}
-  const dates = Object.keys(history).sort().slice(-days).reverse()
-  if (!dates.length) return 'No history yet.'
-  return dates
-    .map(date => {
-      const list = history[date] ?? []
-      const done = list.filter(g => g.progress >= 100).length
-      return [`${date}  ${done}/${list.length} done`, ...list.map(g => `  ${bar(g.progress)} ${String(g.progress).padStart(3)}%  ${g.text}`)].join('\n')
-    })
-    .join('\n\n')
-}
-
-export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    const saved = (await $.store.get('goals')) as Goal[] | undefined
-    if (saved) await update($, goals, () => saved)
-    await $.command.register({ name: 'goals', description: 'Manage your goals pane: add, set progress, done, rm, clear' })
+    const io = engineIo($)
+    const d = await dir($, o)
+    const at = localIso(await now($))
+    await migrate(io, d, at)
+    const label = await repoLabel((argv, init) => $.process.run(argv, init), e.cwd)
+    const state = await loadState(io, d)
+    await update($, view, () => ({ state, label, today: at.slice(0, 10), expanded: null }))
+    await $.command.register({ name: 'goals', description: 'Goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
     await $.tool.register({
       name: 'update_goals',
       description:
-        "Update the user's goals pane. Call it when work you did moves one of the user's listed goals forward (set progress 0-100), or when the user asks to add/remove a goal. Goals are numbered from 1 in the pane.",
+        "Read or change the user's goals pane, or get a summary. Takes one /goals command line without the slash word, e.g. " +
+        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
-      inputSchema: {
-        type: 'object',
-        properties: {
-          action: { type: 'string', enum: ['add', 'progress', 'remove', 'list', 'history'] },
-          n: { type: 'number', description: 'goal number (1-based) for progress/remove; days for history (default 7)' },
-          progress: { type: 'number', description: '0-100 for progress' },
-          text: { type: 'string', description: 'goal text for add' },
-        },
-        required: ['action'],
-      },
+      inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },
     })
-    void $.ui.open({ id: PANE, title: 'Goals' })
+    void $.ui.open({ id: PANE, title: 'Goals', columns: 32 })
     return next(e)
   })
 
   on('command.run', { command: 'goals' }, async ($, e) => {
-    const op = parse(e.args)
-    await $.ui.open({ id: PANE, title: 'Goals' })
-    if (typeof op === 'string') return { text: op }
-    const first = op[0]!
-    if (first.action === 'history') return { text: await historyText($, first.days) }
-    for (const one of op) await change($, one as Op)
-    return { text: first.action === 'add' ? `Added ${op.length} goal(s).` : 'Goals updated.' }
+    await $.ui.open({ id: PANE, title: 'Goals', columns: 32 })
+    return { text: await run($, o, parse(e.args)) }
   })
 
   on('tool.run', { tool: TOOL }, async ($, e) => {
-    const input = (e as unknown as { input: { action: string; n?: number; progress?: number; text?: string } }).input
-    if (input.action === 'history') return { result: await historyText($, input.n || 7) } as never
-    if (input.action !== 'list') await change($, input as Op)
-    const list = ((await $.store.get('goals')) as Goal[] | undefined) ?? []
-    return { result: list.map((g, i) => `${i + 1}. [${g.progress}%] ${g.text}`).join('\n') || 'No goals.' } as never
+    const input = (e as unknown as { input: { command?: string } }).input
+    return { result: await run($, o, parse(input.command ?? '')) } as never
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
-    const list = await read($, goals)
-    const done = list.filter(g => g.progress >= 100).length
-    return (
-      <Box flexDirection="column">
-        {list.length === 0 && <Text dimColor>No goals. /goals add &lt;text&gt;</Text>}
-        {list.length > 0 && <Text bold>{done}/{list.length} done</Text>}
-        {list.map((g, i) => (
-          <Box flexDirection="column" marginTop={1}>
-            <Text dimColor={g.progress >= 100} strikethrough={g.progress >= 100}>
-              {i + 1}. {g.text}
-            </Text>
-            <Text color={g.progress >= 100 ? 'green' : undefined}>
-              {bar(g.progress)} {g.progress}%
-            </Text>
-          </Box>
-        ))}
-      </Box>
-    )
+    const ui = $.ui.resolve(e)
+    const v = await read($, view)
+    if (!v?.state) return <ui.Text dimColor>Loading goals…</ui.Text>
+    return paneTree(ui as never, { ...v, state: v.state }, e.props.bodyColumns, {
+      focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
+      tick: (goal, sub) => void change($, o, { kind: 'tick', goal, sub }),
+    })
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const v = await read($, view)
+    const tree = v?.state && !e.props.hasSurvey ? stripTree($.ui.resolve(e) as never, { ...v, state: v.state }, e.props.bodyColumns) : null
+    return tree ?? next(e)
   })
 }
