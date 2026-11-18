@@ -122,7 +122,7 @@ Today I'll add screenshots to the guide.
 - **Labels.** `@here` resolves to the folder name of the repo's main checkout (`git rev-parse --git-common-dir`), so worktrees share a label. Outside git it is the current folder's name.
 - **Focus.** One NOW goal per label. A session shows the focus of its repo's label, or General's when that label has none.
 - **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/goals done-list`.
-- **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. A pane only refreshes on its own session's changes, so run `/goals` to refresh it. In the rare case two sessions write in the same instant, one log line can be lost.
+- **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. Every open pane picks up changes from other sessions within a few seconds. In the rare case two sessions write in the same instant, one log line can be lost.
 
 ## Configuration
 
