@@ -61,7 +61,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/goals tick 3.2 "note"` | Tick (or untick) sub-task 3.2, with an optional note |
 | `/goals 3 60 "note"` | Set progress of a goal without sub-tasks |
 | `/goals done 3` | Mark goal #3 done |
-| `/goals rm 3` / `rm 3.2` | Remove a goal or a sub-task |
+| `/goals rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
 | `/goals focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
 | `/goals tag 3 @label` | Move a goal to a label (`@general` to clear) |
 | `/goals @label` | Open or close another label in the pane (or click its header) |

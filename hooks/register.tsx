@@ -25,7 +25,7 @@ export const HELP = [
   '/goals tick <n>.<m> ["note"]     tick / untick a sub-task',
   '/goals <n> <0-100> ["note"]      set progress (goals without sub-tasks)',
   '/goals done <n> ["note"]         mark goal n done',
-  '/goals rm <n> | rm <n>.<m>       remove a goal or sub-task',
+  '/goals rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
   '/goals focus <n> | focus off     set or clear the NOW goal',
   '/goals tag <n> @label|@general   move a goal to a label',
   '/goals @label                    open / close a label in the pane',
@@ -98,6 +98,11 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
       return HELP
     case 'op':
       return change($, o, cmd.op)
+    case 'ops': {
+      const out: string[] = []
+      for (const op of cmd.ops) out.push(await change($, o, op))
+      return out.join('\n')
+    }
     case 'show':
       await update($, view, v => (v ? { ...v, expanded: v.expanded === cmd.label ? null : cmd.label } : v))
       return `Toggled @${cmd.label} in the pane.`

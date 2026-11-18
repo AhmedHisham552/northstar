@@ -126,6 +126,9 @@ test('commands write goals.json and the month log, summaries add a post', async 
   expect(saved.goals[0]).toMatchObject({ id: 1, label: 'shop', subs: [{ done: true }, { done: true }] }) // 1.2 was ticked by the other session
   const log = files.get('/home/u/.claude-goals/log/2026-11.jsonl')!.trim().split('\n').map(l => JSON.parse(l).type)
   expect(log).toEqual(['goal.add', 'goal.add', 'sub.add', 'sub.add', 'sub.done', 'goal.focus'])
+  await run('add Tmp A; Tmp B')
+  expect(await run('rm [3, 4]')).toBe('goal remove: #3 Tmp A\ngoal remove: #4 Tmp B')
+  expect(await run('rm 3')).toBe('no goal #3')
 
   const today = await run('today')
   expect(today).toContain('DONE        ✓ Read docs (Card research)')

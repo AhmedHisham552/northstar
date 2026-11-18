@@ -59,3 +59,12 @@ test('work starts a goal', () => {
   expect(parse('work 1, 3')).toEqual({ kind: 'work', goals: [1, 3] })
   expect(parse('work')).toEqual({ kind: 'help' })
 })
+
+test('rm takes a list of goals and sub-tasks', () => {
+  const rm = (goal: number, sub?: number) => ({ kind: 'rm', goal, ...(sub ? { sub } : {}) })
+  expect(parse('rm 5, 6')).toEqual({ kind: 'ops', ops: [rm(5), rm(6)] })
+  expect(parse('rm [5,6]')).toEqual({ kind: 'ops', ops: [rm(5), rm(6)] })
+  expect(parse('rm 5 3.2')).toEqual({ kind: 'ops', ops: [rm(5), rm(3, 2)] })
+  expect(parse('rm 4')).toEqual({ kind: 'op', op: rm(4) })
+  expect(parse('rm 4, x')).toEqual({ kind: 'help' })
+})

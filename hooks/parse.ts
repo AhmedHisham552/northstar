@@ -2,6 +2,7 @@ import type { Op } from './model'
 
 export type Cmd =
   | { kind: 'op'; op: Op }
+  | { kind: 'ops'; ops: Op[] }
   | { kind: 'summary'; period: 'yesterday' | 'today' | 'week' }
   | { kind: 'range'; from: string; to: string }
   | { kind: 'show'; label: string }
@@ -44,8 +45,18 @@ export function parse(args: string): Cmd {
       return dotted ? op(withNote({ kind: 'tick', goal: Number(dotted[1]), sub: Number(dotted[2]) })) : HELP
     case 'done':
       return n ? op(withNote({ kind: 'done', goal: n })) : HELP
-    case 'rm':
-      return dotted ? op({ kind: 'rm', goal: Number(dotted[1]), sub: Number(dotted[2]) }) : n ? op({ kind: 'rm', goal: n }) : HELP
+    case 'rm': {
+      // One or many: `rm 5`, `rm 5, 6`, `rm [5,6]`, `rm 5 3.2`.
+      const ops: Op[] = []
+      for (const t of words.slice(1).join(' ').split(/[\s,[\]]+/).filter(Boolean)) {
+        const d = t.match(/^#?(\d+)\.(\d+)$/)
+        const g = goalNo(t)
+        if (d) ops.push({ kind: 'rm', goal: Number(d[1]), sub: Number(d[2]) })
+        else if (g) ops.push({ kind: 'rm', goal: g })
+        else return HELP
+      }
+      return ops.length === 1 ? op(ops[0]!) : ops.length ? { kind: 'ops', ops } : HELP
+    }
     case 'focus':
       return a === 'off' ? op({ kind: 'focus', goal: null, label: '@here' }) : n ? op({ kind: 'focus', goal: n, label: null }) : HELP
     case 'tag':
