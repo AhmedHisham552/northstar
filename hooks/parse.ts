@@ -35,7 +35,7 @@ export function parse(args: string): Cmd {
   const dotted = a.match(/^#?(\d+)\.(\d+)$/)
   switch (cmd) {
     case 'work': {
-      const goals = words.slice(1).map(goalNo)
+      const goals = words.slice(1).join(' ').split(/[\s,[\]]+/).filter(Boolean).map(goalNo)
       return goals.length && goals.every(Boolean) ? { kind: 'work', goals } : HELP
     }
     case 'sub':

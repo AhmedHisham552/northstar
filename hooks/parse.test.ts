@@ -55,5 +55,7 @@ test('final-review: v1 commands do not become goals', () => {
 test('work starts a goal', () => {
   expect(parse('work 3')).toEqual({ kind: 'work', goals: [3] })
   expect(parse('work 1 #3')).toEqual({ kind: 'work', goals: [1, 3] })
+  expect(parse('work [1,3]')).toEqual({ kind: 'work', goals: [1, 3] })
+  expect(parse('work 1, 3')).toEqual({ kind: 'work', goals: [1, 3] })
   expect(parse('work')).toEqual({ kind: 'help' })
 })
