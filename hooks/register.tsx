@@ -31,6 +31,7 @@ export const HELP = [
   '/goals @label                    expand a label in the pane',
   '/goals yesterday | today | week  summary with a ready-to-post update',
   '/goals from YYYY-MM-DD to YYYY-MM-DD',
+  '/goals work <n> [<n> …]          align here, then dispatch agents per goal',
   '/goals done-list                 finished goals',
 ].join('\n')
 
