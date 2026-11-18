@@ -11,7 +11,7 @@ import type { Engine } from './store'
 import { dayRange, localDay, localIso, periodRange, postPrompt, summarize } from './summary'
 import type { WorkWeek } from './summary'
 import { goalsBrief, hintTail, workPrompt } from './brief'
-import { paneTree } from './view'
+import { paneTree, summaryTree } from './view'
 import type { View } from './view'
 
 const PANE = 'goals'
@@ -216,6 +216,12 @@ export const register: Register = (on, options) => {
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
       toggle: label => void update($, view, x => (x ? { ...x, expanded: x.expanded === label ? null : label } : x)),
     })
+  })
+
+  // A summary draws as a framed log and post; any other /goals answer keeps the plain row.
+  on('ui.render', { component: 'CommandOutput', props: { command: 'goals' } }, async ($, e, next) => {
+    if (e.props.isErrored || !e.props.text.includes('\n\nPOST\n')) return next(e)
+    return summaryTree($.ui.resolve(e) as never, e.props.text)
   })
 
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {

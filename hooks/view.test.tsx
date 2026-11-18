@@ -50,7 +50,8 @@ test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names',
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
     expect(await texts(ui, /^NOW$/)).toBe('NOW')
-    expect(await texts(ui, /Goals/)).toMatch(/^◎ Goals · shop +0\/5$/)
+    expect(await texts(ui, /Goals/)).toBe('◎ Goals · shop')
+    expect(await texts(ui, /^0\/5$/)).toBe('0/5')
     expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
     expect(await texts(ui, /^1\/2$/)).toBe('1/2')
     expect(await button(ui, 'g2')).toBe('○ #2 Demo prep')
@@ -185,5 +186,15 @@ test('work in progress spins in the pane', async ($, on) => {
   expect(await button(ui, 's1.2')).toContain('⠸ 1.2 Pricing call')
   expect(await button(ui, 'g2')).toMatch(/^⠸ #2 Demo prep/)
   expect(await button(ui, 's1.1')).toContain('✓ 1.1')
+  await ui.unmount()
+})
+
+test('a summary draws framed with accent keys and a post', async ($, on) => {
+  const out = (text: string) => ({ plugin: 'goals', surface: 'terminal', component: 'CommandOutput', props: { command: 'goals', args: 'yesterday', text, isErrored: false } }) as never
+  const text = 'Tue 17 Nov\nPLANNED     2 goals open\nDONE        ✓ Draft (Ship docs)\n                sandbox next week\n\nPOST\nDrafted the docs.'
+  const ui = await $.ui.mount(out(text))
+  expect(await texts(ui, /^PLANNED/)).toBe('PLANNED     2 goals open')
+  expect(await texts(ui, /^POST$/)).toBe('POST')
+  expect(await texts(ui, /^Drafted the docs\.$/)).toBe('Drafted the docs.')
   await ui.unmount()
 })

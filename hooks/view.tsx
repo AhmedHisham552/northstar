@@ -21,13 +21,28 @@ export const focusedGoal = focused
 // A spinner frame replaces the glyph while the goal is being worked on.
 const goalMark = (g: Goal, act: Act) => (g.doneAt ? glyph(100) : act.spin(String(g.id)) ?? glyph(progressOf(g)))
 
+// One row in parts: glyph in the accent (green once done), number dim, text, count dim and flush right.
+type Parts = { mark: string; num: string; text: string; right: string; done: boolean; busy: boolean; indent?: string }
+function parts(ui: Els, p: Parts, width: number) {
+  const { Text } = ui
+  const head = `${p.indent ?? ''}${p.mark} ${p.num} `
+  const room = Math.max(1, width - head.length - (p.right ? p.right.length + 1 : 0))
+  const body = p.right ? fit(p.text, room).padEnd(room + 1) : fit(p.text, room)
+  return [
+    p.indent ?? '',
+    <Text color={p.done ? 'success' : ACCENT}>{p.mark}</Text>,
+    ' ',
+    <Text color="subtle">{p.num}</Text>,
+    ' ',
+    <Text dimColor={p.done} bold={p.busy}>{body}</Text>,
+    ...(p.right ? [<Text color="subtle">{p.right}</Text>] : []),
+  ]
+}
+
 function goalRow(ui: Els, g: Goal, width: number, act: Act) {
-  const line = row(`${goalMark(g, act)} #${g.id} ${g.text}`, amount(g), width)
-  return g.doneAt ? (
-    <ui.Text color="success">{line}</ui.Text>
-  ) : (
-    <ui.Button key={`g${g.id}`} plain label={line} onPress={() => act.focus(g.id)} />
-  )
+  const mark = goalMark(g, act)
+  const row = parts(ui, { mark, num: `#${g.id}`, text: g.text, right: amount(g), done: !!g.doneAt, busy: !g.doneAt && mark !== glyph(progressOf(g)) }, width)
+  return g.doneAt ? <ui.Text>{row}</ui.Text> : <ui.Button key={`g${g.id}`} plain onPress={() => act.focus(g.id)}>{row}</ui.Button>
 }
 
 export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
@@ -37,7 +52,10 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const count = `${done}/${goals.length}`
   const header = (
     <Box flexDirection="column" marginBottom={1}>
-      <Text color={ACCENT} bold>{row(`◎ Goals · ${v.label}`, count, width)}</Text>
+      <Box justifyContent="space-between">
+        <Text color={ACCENT} bold>{fit(`◎ Goals · ${v.label}`, width - count.length - 1)}</Text>
+        <Text color="subtle">{count}</Text>
+      </Box>
       <Text color="subtle">{'─'.repeat(width)}</Text>
     </Box>
   )
@@ -67,12 +85,19 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
         <Box flexDirection="column" marginBottom={1}>
           <Box justifyContent="space-between">
             <Text color={ACCENT} bold>NOW</Text>
-            {amount(now) && <Text color={ACCENT}>{amount(now)}</Text>}
+            {amount(now) && <Text color="subtle">{amount(now)}</Text>}
           </Box>
-          <Text bold wrap="wrap">{`${goalMark(now, act)} #${now.id} ${now.text}`}</Text>
-          {now.subs.map(s => (
-            <Button key={`s${now.id}.${s.id}`} plain dimColor={s.done} label={fit(`  ${s.done ? '✓' : act.spin(`${now.id}.${s.id}`) ?? '○'} ${now.id}.${s.id} ${s.text}`, width)} onPress={() => act.tick(now.id, s.id, !s.done)} />
-          ))}
+          <Text bold wrap="wrap">
+            <Text color={now.doneAt ? 'success' : ACCENT}>{goalMark(now, act)}</Text> <Text color="subtle">{`#${now.id}`}</Text> {now.text}
+          </Text>
+          {now.subs.map(s => {
+            const spin = s.done ? null : act.spin(`${now.id}.${s.id}`)
+            return (
+              <Button key={`s${now.id}.${s.id}`} plain onPress={() => act.tick(now.id, s.id, !s.done)}>
+                {parts(ui, { indent: '  ', mark: s.done ? '✓' : spin ?? '○', num: `${now.id}.${s.id}`, text: s.text, right: '', done: s.done, busy: !!spin }, width)}
+              </Button>
+            )
+          })}
         </Box>
       )}
       {groups.map(([name, list]) => (
@@ -90,6 +115,43 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
         ) : (
           <Button key={`l${label}`} plain dimColor label={row(`▸ ${label.toUpperCase()}`, String(list.length), width)} onPress={() => act.toggle(label)} />
         ),
+      )}
+    </Box>
+  )
+}
+
+const KEYS = /^(PLANNED|DONE|MOVED|STILL OPEN)?\s*$/
+
+// The summary as the film draws it: the log framed with accent section keys, the post framed in the accent.
+export function summaryTree(ui: Els, text: string) {
+  const { Box, Text } = ui
+  const [log = '', post = ''] = text.split('\n\nPOST\n')
+  const [title = '', ...lines] = log.split('\n')
+  return (
+    <Box flexDirection="column">
+      <Box flexDirection="column" borderStyle="round" borderColor="subtle" paddingX={1}>
+        <Text bold>{title}</Text>
+        {lines.map(l => {
+          if (!l.trim()) return <Text> </Text>
+          if (l.startsWith(' '.repeat(16))) return <Text dimColor>{l}</Text>
+          const key = l.slice(0, 12)
+          if (l.length > 12 && KEYS.test(key)) {
+            const v = l.slice(12)
+            return (
+              <Text>
+                <Text color={ACCENT} bold>{key}</Text>
+                {v.startsWith('✓') ? [<Text color="success">✓</Text>, v.slice(1)] : v}
+              </Text>
+            )
+          }
+          return l.startsWith(' ') ? <Text dimColor>{l}</Text> : <Text color="subtle" bold>{l}</Text>
+        })}
+      </Box>
+      {post && (
+        <Box flexDirection="column" borderStyle="round" borderColor={ACCENT} paddingX={1}>
+          <Text color={ACCENT} bold>POST</Text>
+          <Text>{post}</Text>
+        </Box>
       )}
     </Box>
   )
