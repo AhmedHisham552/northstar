@@ -1,0 +1,12 @@
+{
+  "name": "goals",
+  "version": "0.1.0",
+  "description": "A side pane of your own goals with a progress bar each, kept across sessions; /goals to manage them",
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Ahmed Hisham",
+    "url": "https://github.com/AhmedHisham552"
+  },
+  "repository": "https://github.com/AhmedHisham552/claude-goals"
+}

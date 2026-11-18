@@ -1,0 +1,13 @@
+{
+  "name": "claude-goals",
+  "owner": {
+    "name": "Ahmed Hisham"
+  },
+  "plugins": [
+    {
+      "name": "goals",
+      "source": "./"
+    }
+  ],
+  "description": "A goals pane with progress bars for Claude Code"
+}
