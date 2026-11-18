@@ -7,8 +7,11 @@ export type Cmd =
   | { kind: 'range'; from: string; to: string }
   | { kind: 'show'; label: string }
   | { kind: 'doneList' }
-  | { kind: 'work'; goals: number[] }
+  | { kind: 'work'; items: WorkItem[]; mode?: Dispatch }
   | { kind: 'help' }
+
+export type Dispatch = 'agents' | 'workflow'
+export type WorkItem = { goal: number; subs?: number[] }
 
 const HELP: Cmd = { kind: 'help' }
 const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))
@@ -36,8 +39,22 @@ export function parse(args: string): Cmd {
   const dotted = a.match(/^#?(\d+)\.(\d+)$/)
   switch (cmd) {
     case 'work': {
-      const goals = words.slice(1).join(' ').split(/[\s,[\]]+/).filter(Boolean).map(goalNo)
-      return goals.length && goals.every(Boolean) ? { kind: 'work', goals } : HELP
+      // Goals and/or sub-tasks: `work 1 3`, `work [1,3]`, `work 2.4 2.5 workflow`.
+      const items: WorkItem[] = []
+      let mode: Dispatch | undefined
+      for (const t of words.slice(1).join(' ').split(/[\s,[\]]+/).filter(Boolean)) {
+        if (t === 'workflow' || t === 'workflows') mode = 'workflow'
+        else if (t === 'agents' || t === 'agent') mode = 'agents'
+        else {
+          const d = t.match(/^#?(\d+)\.(\d+)$/)
+          const g = d ? Number(d[1]) : goalNo(t)
+          if (!g) return HELP
+          let item = items.find(i => i.goal === g)
+          if (!item) items.push((item = { goal: g }))
+          if (d) item.subs = [...(item.subs ?? []), Number(d[2])]
+        }
+      }
+      return items.length ? { kind: 'work', items, ...(mode ? { mode } : {}) } : HELP
     }
     case 'sub':
       return n && split(words.slice(2).join(' ')).length ? op({ kind: 'sub', goal: n, texts: split(words.slice(2).join(' ')) }) : HELP

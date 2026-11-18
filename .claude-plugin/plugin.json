@@ -31,6 +31,16 @@
       "title": "Auto-update",
       "description": "Let Claude switch focus and tick sub-tasks on its own from the conversation",
       "default": true
+    },
+    "dispatch": {
+      "type": "string",
+      "title": "Dispatch",
+      "description": "How /goals:work runs each goal after aligning: background agents (lighter) or workflows (more thorough, more agents)",
+      "options": [
+        "agents",
+        "workflow"
+      ],
+      "default": "agents"
     }
   }
 }

@@ -36,19 +36,24 @@ export function goalsBrief(v: Shown): string {
   ].join('\n')
 }
 
-export function workPrompt(goals: Goal[]): string {
-  const list = goals.flatMap(g => [
-    `#${g.id} ${g.text}`,
-    ...g.subs.map(s => `  ${g.id}.${s.id} ${s.done ? '(done) ' : ''}${s.text}`),
+export type Dispatch = 'agents' | 'workflow'
+
+export function workPrompt(items: { goal: Goal; subs?: number[] }[], dispatch: Dispatch): string {
+  const list = items.flatMap(({ goal: g, subs }) => [
+    `#${g.id} ${g.text}${subs ? ' (only these sub-tasks)' : ''}`,
+    ...g.subs.filter(s => !subs || subs.includes(s.id)).map(s => `  ${g.id}.${s.id} ${s.done ? '(done) ' : ''}${s.text}`),
   ])
+  const runner =
+    dispatch === 'workflow'
+      ? `run one workflow per goal with the Workflow tool (I opted into workflows by running /goals:work in workflow mode). Give each a self-contained brief (goal, its sub-tasks, my answers, constraints). Its agents tick sub-tasks with update_goals ("tick <n>.<m> \\"short note\\"") as they finish them, do not guess on open questions, and the workflow returns the exact question instead of continuing when blocked.`
+      : `start one background agent per goal with a self-contained brief (goal, its sub-tasks, my answers, constraints). Each agent ticks its sub-tasks with update_goals ("tick <n>.<m> \\"short note\\"") as it finishes them, does not guess on open questions, and if blocked returns the exact question instead of continuing.`
   return [
-    `Orchestrate work on my goal${goals.length > 1 ? 's' : ''}:\n${list.join('\n')}`,
+    `Orchestrate work on my goal${items.length > 1 ? 's' : ''}:\n${list.join('\n')}`,
     'Phase 1, align (here, with me): for each goal, gather what you can from the code, docs and tools first. ' +
       'Goals without sub-tasks get 3-6 concrete ones via update_goals ("sub <n> A; B; C"). ' +
+      'Where only some sub-tasks are listed, work on those alone. ' +
       'Then ask me, in one message, every question you need answered to finish without me. Wait for my answers and confirmation.',
-    'Phase 2, dispatch: once I confirm, start one background agent per goal with a self-contained brief (goal, sub-tasks, my answers, constraints). ' +
-      'Each agent ticks its sub-tasks with update_goals ("tick <n>.<m> \"short note\"") as it finishes them, does not guess on open questions, ' +
-      'and if blocked returns the exact question instead of continuing.',
-    'Phase 3, report: as each agent finishes, give me its result in a few lines and ask me any question it raised. Re-dispatch with my answer when needed.',
+    `Phase 2, dispatch: once I confirm, ${runner}`,
+    'Phase 3, report: as each one finishes, give me its result in a few lines and ask me any question it raised. Re-dispatch with my answer when needed.',
   ].join('\n\n')
 }

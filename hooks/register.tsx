@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import { applyOp, labelKey } from './model'
-import type { Op } from './model'
+import type { Goal, Op } from './model'
 import { repoLabel } from './label'
 import { parse } from './parse'
 import type { Cmd } from './parse'
@@ -31,11 +31,11 @@ export const HELP = [
   '/goals @label                    open / close a label in the pane',
   '/goals yesterday | today | week  summary with a ready-to-post update',
   '/goals from YYYY-MM-DD to YYYY-MM-DD',
-  '/goals:work <n> [<n> …]          align here, then dispatch agents per goal',
+  '/goals:work <n|n.m> … [workflow] align here, then dispatch agents or workflows',
   '/goals done-list                 finished goals',
 ].join('\n')
 
-type Opts = { dataDir: string | undefined; workWeek: WorkWeek; autoUpdate: boolean }
+type Opts = { dataDir: string | undefined; workWeek: WorkWeek; autoUpdate: boolean; dispatch: 'agents' | 'workflow' }
 
 function dir($: Engine, o: Opts) {
   return dataDir(engineIo($), o.dataDir)
@@ -117,11 +117,16 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
       return summary($, o, dayRange(cmd.from, cmd.to), true)
     case 'work': {
       const s = await loadState(engineIo($), await dir($, o))
-      const goals = cmd.goals.map(id => s.goals.find(g => g.id === id))
-      const missing = cmd.goals.filter((_, i) => !goals[i])
-      if (missing.length) return `no goal ${missing.map(id => `#${id}`).join(', ')}`
-      await change($, o, { kind: 'focus', goal: cmd.goals[0]!, label: null })
-      return workPrompt(goals.filter(g => g !== undefined))
+      const items: { goal: Goal; subs?: number[] }[] = []
+      for (const it of cmd.items) {
+        const goal = s.goals.find(g => g.id === it.goal)
+        if (!goal) return `no goal #${it.goal}`
+        const bad = it.subs?.find(id => !goal.subs.some(x => x.id === id))
+        if (bad !== undefined) return `no sub-task ${goal.id}.${bad}`
+        items.push(it.subs ? { goal, subs: it.subs } : { goal })
+      }
+      await change($, o, { kind: 'focus', goal: cmd.items[0]!.goal, label: null })
+      return workPrompt(items, cmd.mode ?? o.dispatch)
     }
   }
 }
@@ -131,6 +136,7 @@ export const register: Register = (on, options) => {
     dataDir: typeof options.dataDir === 'string' ? options.dataDir : undefined,
     workWeek: options.workWeek === 'mon-fri' ? 'mon-fri' : 'sun-thu',
     autoUpdate: options.autoUpdate !== false,
+    dispatch: options.dispatch === 'workflow' ? 'workflow' : 'agents',
   }
 
   on('session.start', async ($, e, next) => {
@@ -161,7 +167,10 @@ export const register: Register = (on, options) => {
     await $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
     const cmd = parse(e.args)
     // A command can't start a turn; the plugin's /goals:work skill does.
-    if (cmd.kind === 'work') return { text: `Run /goals:work ${cmd.goals.join(' ')} to start working on ${cmd.goals.map(n => `#${n}`).join(', ')}.` }
+    if (cmd.kind === 'work') {
+      const what = cmd.items.flatMap(i => (i.subs ? i.subs.map(x => `${i.goal}.${x}`) : [String(i.goal)]))
+      return { text: `Run /goals:work ${what.join(' ')}${cmd.mode ? ` ${cmd.mode}` : ''} to start working on ${what.map(n => `#${n}`).join(', ')}.` }
+    }
     return { text: await run($, o, cmd) }
   })
 

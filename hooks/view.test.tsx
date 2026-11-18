@@ -107,7 +107,7 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('sub 1 Read docs; Pricing call')
   await run('tick 1.1 "quick win"')
   expect(await run('tick 9.9')).toBe('no goal #9')
-  expect(await run('')).toContain('/goals:work <n>')
+  expect(await run('')).toContain('/goals:work <n|n.m>')
 
   // Another session ticks 1.2: the next prompt here carries the fresh state.
   const other = JSON.parse(files.get('/home/u/.claude-goals/goals.json')!)
@@ -116,9 +116,12 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await $.prompt.submit({ text: 'next', wait: false, origin: { kind: 'composer' } } as never)
   expect(lastContext.join('\n')).toContain('1.2 [x] Pricing call')
   expect(await run('work [1]')).toBe('Run /goals:work 1 to start working on #1.')
+  expect(await run('work 1.2 workflow')).toBe('Run /goals:work 1.2 workflow to start working on #1.2.')
   expect(submitted).toEqual(['next'])
   const viaTool = (await $.tool.call({ tool: 'mcp__goals__update_goals', command: 'work 1' } as never)) as unknown as { result?: string; text?: string }
   expect(String(viaTool.result ?? viaTool.text)).toMatch(/^Orchestrate work on my goal:\n#1 Card research/)
+  const subOnly = (await $.tool.call({ tool: 'mcp__goals__update_goals', command: 'work 1.9' } as never)) as unknown as { result?: string }
+  expect(subOnly.result).toBe('no sub-task 1.9')
   await run('focus 1')
 
   const saved = JSON.parse(files.get('/home/u/.claude-goals/goals.json')!)

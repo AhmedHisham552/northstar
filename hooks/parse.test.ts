@@ -53,10 +53,13 @@ test('final-review: v1 commands do not become goals', () => {
 })
 
 test('work starts a goal', () => {
-  expect(parse('work 3')).toEqual({ kind: 'work', goals: [3] })
-  expect(parse('work 1 #3')).toEqual({ kind: 'work', goals: [1, 3] })
-  expect(parse('work [1,3]')).toEqual({ kind: 'work', goals: [1, 3] })
-  expect(parse('work 1, 3')).toEqual({ kind: 'work', goals: [1, 3] })
+  expect(parse('work 3')).toEqual({ kind: 'work', items: [{ goal: 3 }] })
+  expect(parse('work 1 #3')).toEqual({ kind: 'work', items: [{ goal: 1 }, { goal: 3 }] })
+  expect(parse('work [1,3]')).toEqual({ kind: 'work', items: [{ goal: 1 }, { goal: 3 }] })
+  expect(parse('work 1, 3')).toEqual({ kind: 'work', items: [{ goal: 1 }, { goal: 3 }] })
+  expect(parse('work 2.4 2.5 1')).toEqual({ kind: 'work', items: [{ goal: 2, subs: [4, 5] }, { goal: 1 }] })
+  expect(parse('work 2.4 workflow')).toEqual({ kind: 'work', items: [{ goal: 2, subs: [4] }], mode: 'workflow' })
+  expect(parse('work 1 agents')).toEqual({ kind: 'work', items: [{ goal: 1 }], mode: 'agents' })
   expect(parse('work')).toEqual({ kind: 'help' })
 })
 

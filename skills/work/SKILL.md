@@ -1,7 +1,7 @@
 ---
 name: work
 description: Orchestrate work on one or more goals from the goals pane - align with the user first, then dispatch a background agent per goal that ticks its sub-tasks. Use when the user runs /goals:work or asks to work on, start or dispatch goals by number.
-argument-hint: <goal numbers, e.g. 1 3>
+argument-hint: <goals or sub-tasks, e.g. 1 3 or 2.4 2.5> [agents|workflow]
 ---
 
 Call the `update_goals` tool with the command `work $ARGUMENTS`.

@@ -68,6 +68,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/goals yesterday` / `today` / `week` | Summary for that period |
 | `/goals from 2026-11-01 to 2026-11-15` | Summary for any date range |
 | `/goals:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
+| `/goals:work 2.4 2.5 workflow` | Work on chosen sub-tasks only, run as workflows |
 | `/goals done-list` | List finished goals |
 | `/goals` | Open the pane and show help |
 
@@ -79,10 +80,10 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Working on goals
 
-`/goals:work <n> [<n> …]` (a skill that ships with the plugin) turns this session into an orchestrator for those goals:
+`/goals:work <n|n.m> … [agents|workflow]` (a skill that ships with the plugin) turns this session into an orchestrator. Pass whole goals (`1 3`), chosen sub-tasks (`2.4 2.5`), or both:
 
 1. **Align.** Claude reads what it can from the code, docs and tools, adds sub-tasks to any goal without them, then asks you every question it needs answered, in one message.
-2. **Dispatch.** Once you confirm, it starts one background agent per goal with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.
+2. **Dispatch.** Once you confirm, it starts one background agent per goal, or one workflow per goal with `workflow` (or the `dispatch` setting), each with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.
 3. **Report.** As agents finish, Claude gives you each result in a few lines and brings you any question raised, then re-dispatches with your answer.
 
 ## Standups and weekly reviews
@@ -133,6 +134,7 @@ Run `/plugin`, open **goals**, and set:
 | `dataDir` | `~/.claude-goals` | Folder for `goals.json` and `log/` |
 | `workWeek` | `sun-thu` | Working days for `yesterday` and `week` (`sun-thu` or `mon-fri`) |
 | `autoUpdate` | on | Claude may switch focus and tick sub-tasks on its own from the conversation |
+| `dispatch` | `agents` | How `/goals:work` runs each goal: `agents` (lighter) or `workflow` (more thorough, uses more agents) |
 
 The pane docks beside the chat in the fullscreen layout on a terminal at least 110 columns wide:
 

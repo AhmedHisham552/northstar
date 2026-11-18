@@ -39,11 +39,20 @@ test('the hint tail names the focused goal, and is empty without focus', () => {
 })
 
 test('the work prompt aligns first, then dispatches each goal', () => {
-  const p = workPrompt([state.goals[0]!, state.goals[2]!])
+  const p = workPrompt([{ goal: state.goals[0]! }, { goal: state.goals[2]! }], 'agents')
   expect(p).toContain('#1 Card research')
   expect(p).toContain('1.2 Pricing call')
   expect(p).toContain('#3 Write post')
   expect(p).toContain('update_goals')
   expect(p).toMatch(/Phase 1, align/)
   expect(p).toMatch(/Phase 2, dispatch/)
+})
+
+test('work on chosen sub-tasks only, dispatched as workflows', () => {
+  const p = workPrompt([{ goal: state.goals[0]!, subs: [2] }], 'workflow')
+  expect(p).toContain('1.2 Pricing call')
+  expect(p).not.toContain('1.1 Read docs')
+  expect(p).toContain('only these sub-tasks')
+  expect(p).toContain('Workflow tool')
+  expect(p).not.toContain('one background agent per goal')
 })
