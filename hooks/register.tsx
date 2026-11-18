@@ -41,6 +41,23 @@ function dir($: Engine, o: Opts) {
   return dataDir(engineIo($), o.dataDir)
 }
 
+// Other sessions write the same files: pick their changes up when goals.json changes on disk.
+let seenMtime = -1
+async function refresh($: Engine, o: Opts) {
+  try {
+    const io = engineIo($)
+    const path = `${await dir($, o)}/goals.json`
+    if (!(await io.exists(path))) return
+    const { mtimeMs } = await $.fs.stat(path)
+    if (mtimeMs === seenMtime) return
+    seenMtime = mtimeMs
+    const state = await loadState(io, await dir($, o))
+    await update($, view, v => (v ? { ...v, state } : v))
+  } catch {
+    // a refresh that fails keeps the last state; it must never block a prompt
+  }
+}
+
 async function now($: Engine) {
   return new Date(await $.clock.now())
 }
@@ -130,6 +147,8 @@ export const register: Register = (on, options) => {
       inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },
     })
     void $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
+    // ponytail: 4s mtime poll; a file watcher if the API ever offers one.
+    $.clock.every(4000, () => void refresh($, o))
     return next(e)
   })
 
@@ -175,6 +194,7 @@ export const register: Register = (on, options) => {
 
   // Each prompt carries the current goals, so Claude can switch focus or tick sub-tasks as the talk moves.
   on('prompt.submit', async ($, e, next) => {
+    await refresh($, o)
     const v = await read($, view)
     if (!o.autoUpdate || e.command || !v?.state || !v.state.goals.some(g => !g.doneAt)) return next(e)
     return next({ ...e, context: [...(e.context ?? []), goalsBrief({ ...v, state: v.state })] })
