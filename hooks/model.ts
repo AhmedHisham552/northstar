@@ -125,6 +125,7 @@ export function applyOp(input: State, op: Op, at: string): Result {
       }
       break
     case 'focus':
+      if (s.focus[labelKey(g.label)] === g.id) break // already NOW: nothing to log
       s.focus[labelKey(g.label)] = g.id
       log(g, 'goal.focus')
       break

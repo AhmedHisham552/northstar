@@ -31,7 +31,7 @@ export const HELP = [
   '/goals @label                    expand a label in the pane',
   '/goals yesterday | today | week  summary with a ready-to-post update',
   '/goals from YYYY-MM-DD to YYYY-MM-DD',
-  '/goals work <n> [<n> …]          align here, then dispatch agents per goal',
+  '/goals:work <n> [<n> …]          align here, then dispatch agents per goal',
   '/goals done-list                 finished goals',
 ].join('\n')
 
@@ -99,8 +99,7 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
       const missing = cmd.goals.filter((_, i) => !goals[i])
       if (missing.length) return `no goal ${missing.map(id => `#${id}`).join(', ')}`
       await change($, o, { kind: 'focus', goal: cmd.goals[0]!, label: null })
-      void $.prompt.submit({ text: workPrompt(goals.filter(g => g !== undefined)) })
-      return `Starting work on ${cmd.goals.map(id => `#${id}`).join(', ')}: aligning first, then dispatching.`
+      return workPrompt(goals.filter(g => g !== undefined))
     }
   }
 }
@@ -136,12 +135,16 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'goals' }, async ($, e) => {
     await $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
-    return { text: await run($, o, parse(e.args)) }
+    const cmd = parse(e.args)
+    // A command can't start a turn; the plugin's /goals:work skill does.
+    if (cmd.kind === 'work') return { text: `Run /goals:work ${cmd.goals.join(' ')} to start working on ${cmd.goals.map(n => `#${n}`).join(', ')}.` }
+    return { text: await run($, o, cmd) }
   })
 
   on('tool.run', { tool: TOOL }, async ($, e) => {
-    const input = (e as unknown as { input: { command?: string } }).input
-    const cmd = parse(input.command ?? '')
+    // The tool's arguments arrive on the event itself.
+    const args = e as unknown as { command?: string; input?: { command?: string } }
+    const cmd = parse(args.command ?? args.input?.command ?? '')
     const before = await read($, view)
     const result = await run($, o, cmd)
     // Claude changed the tracker on its own: say so, with the way back for a focus switch.

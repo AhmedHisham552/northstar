@@ -95,6 +95,8 @@ test('commands write goals.json and the month log, summaries add a post', async 
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('model.complete', (_, e) => (prompts.push(String(e.prompt)), { value: { isAnswered: true, text: 'Today I ticked Read docs.' } }) as never)
   on('session.start', (_, e) => ({ cwd: e.cwd }))
+  const submitted: string[] = []
+  on('prompt.submit', (_, e) => (submitted.push(e.text), { text: e.text }) as never)
 
   await $.session.start({ cwd: '/home/u/shop', surface: 'terminal', isInteractive: true })
   const run = async (args: string) => ((await $.command.run({ command: 'goals', args } as never)) as unknown as { text: string }).text
@@ -102,7 +104,11 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('sub 1 Read docs; Pricing call')
   await run('tick 1.1 "quick win"')
   expect(await run('tick 9.9')).toBe('no goal #9')
-  expect(await run('')).toContain('/goals work <n>')
+  expect(await run('')).toContain('/goals:work <n>')
+  expect(await run('work [1]')).toBe('Run /goals:work 1 to start working on #1.')
+  expect(submitted).toEqual([])
+  const viaTool = (await $.tool.call({ tool: 'mcp__goals__update_goals', command: 'work 1' } as never)) as unknown as { result?: string; text?: string }
+  expect(String(viaTool.result ?? viaTool.text)).toMatch(/^Orchestrate work on my goal:\n#1 Card research/)
   await run('focus 1')
 
   const saved = JSON.parse(files.get('/home/u/.claude-goals/goals.json')!)
