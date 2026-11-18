@@ -6,6 +6,7 @@ export type Cmd =
   | { kind: 'range'; from: string; to: string }
   | { kind: 'show'; label: string }
   | { kind: 'doneList' }
+  | { kind: 'work'; goals: number[] }
   | { kind: 'help' }
 
 const HELP: Cmd = { kind: 'help' }
@@ -33,6 +34,10 @@ export function parse(args: string): Cmd {
   const n = goalNo(a)
   const dotted = a.match(/^#?(\d+)\.(\d+)$/)
   switch (cmd) {
+    case 'work': {
+      const goals = words.slice(1).map(goalNo)
+      return goals.length && goals.every(Boolean) ? { kind: 'work', goals } : HELP
+    }
     case 'sub':
       return n && split(words.slice(2).join(' ')).length ? op({ kind: 'sub', goal: n, texts: split(words.slice(2).join(' ')) }) : HELP
     case 'tick':

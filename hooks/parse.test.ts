@@ -51,3 +51,9 @@ test('final-review: v1 commands do not become goals', () => {
   expect(parse('history 7')).toEqual({ kind: 'help' })
   expect(parse('list')).toEqual({ kind: 'help' })
 })
+
+test('work starts a goal', () => {
+  expect(parse('work 3')).toEqual({ kind: 'work', goals: [3] })
+  expect(parse('work 1 #3')).toEqual({ kind: 'work', goals: [1, 3] })
+  expect(parse('work')).toEqual({ kind: 'help' })
+})

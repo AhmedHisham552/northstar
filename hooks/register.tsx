@@ -10,7 +10,8 @@ import { appendEvent, dataDir, engineIo, loadState, migrate, readEvents, saveSta
 import type { Engine } from './store'
 import { dayRange, localDay, localIso, periodRange, postPrompt, summarize } from './summary'
 import type { WorkWeek } from './summary'
-import { paneTree, stripTree } from './view'
+import { goalsBrief, hintTail, workPrompt } from './brief'
+import { paneTree } from './view'
 import type { View } from './view'
 
 const PANE = 'goals'
@@ -33,7 +34,7 @@ export const HELP = [
   '/goals done-list                 finished goals',
 ].join('\n')
 
-type Opts = { dataDir: string | undefined; workWeek: WorkWeek }
+type Opts = { dataDir: string | undefined; workWeek: WorkWeek; autoUpdate: boolean }
 
 function dir($: Engine, o: Opts) {
   return dataDir(engineIo($), o.dataDir)
@@ -91,6 +92,15 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
       return summary($, o, periodRange(cmd.period, await now($), o.workWeek), cmd.period === 'week')
     case 'range':
       return summary($, o, dayRange(cmd.from, cmd.to), true)
+    case 'work': {
+      const s = await loadState(engineIo($), await dir($, o))
+      const goals = cmd.goals.map(id => s.goals.find(g => g.id === id))
+      const missing = cmd.goals.filter((_, i) => !goals[i])
+      if (missing.length) return `no goal ${missing.map(id => `#${id}`).join(', ')}`
+      await change($, o, { kind: 'focus', goal: cmd.goals[0]!, label: null })
+      void $.prompt.submit({ text: workPrompt(goals.filter(g => g !== undefined)) })
+      return `Starting work on ${cmd.goals.map(id => `#${id}`).join(', ')}: aligning first, then dispatching.`
+    }
   }
 }
 
@@ -98,6 +108,7 @@ export const register: Register = (on, options) => {
   const o: Opts = {
     dataDir: typeof options.dataDir === 'string' ? options.dataDir : undefined,
     workWeek: options.workWeek === 'mon-fri' ? 'mon-fri' : 'sun-thu',
+    autoUpdate: options.autoUpdate !== false,
   }
 
   on('session.start', async ($, e, next) => {
@@ -118,18 +129,27 @@ export const register: Register = (on, options) => {
       isDeferred: false,
       inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },
     })
-    void $.ui.open({ id: PANE, title: 'Goals', columns: 32 })
+    void $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
     return next(e)
   })
 
   on('command.run', { command: 'goals' }, async ($, e) => {
-    await $.ui.open({ id: PANE, title: 'Goals', columns: 32 })
+    await $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
     return { text: await run($, o, parse(e.args)) }
   })
 
   on('tool.run', { tool: TOOL }, async ($, e) => {
     const input = (e as unknown as { input: { command?: string } }).input
-    return { result: await run($, o, parse(input.command ?? '')) } as never
+    const cmd = parse(input.command ?? '')
+    const before = await read($, view)
+    const result = await run($, o, cmd)
+    // Claude changed the tracker on its own: say so, with the way back for a focus switch.
+    if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress'].includes(cmd.op.kind) && !result.startsWith('no ')) {
+      const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
+      const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /goals focus ${prev} to undo` : ''
+      $.ui.toast(`Goals: ${result.split('\n').at(-1)}${undo}`)
+    }
+    return { result } as never
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -142,9 +162,15 @@ export const register: Register = (on, options) => {
     })
   })
 
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const v = await read($, view)
-    const tree = v?.state && !e.props.hasSurvey ? stripTree($.ui.resolve(e) as never, { ...v, state: v.state }, e.props.bodyColumns) : null
-    return tree ?? next(e)
+    const tail = v?.state ? hintTail({ ...v, state: v.state }) : ''
+    return tail ? next({ ...e, props: { ...e.props, tail: `· ${tail}` } }) : next(e)
   })
-}
+
+  // Each prompt carries the current goals, so Claude can switch focus or tick sub-tasks as the talk moves.
+  on('prompt.submit', async ($, e, next) => {
+    const v = await read($, view)
+    if (!o.autoUpdate || e.command || !v?.state || !v.state.goals.some(g => !g.doneAt)) return next(e)
+    return next({ ...e, context: [...(e.context ?? []), goalsBrief({ ...v, state: v.state })] })
+  })}

@@ -1,6 +1,6 @@
 {
   "name": "goals",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A goals pane for Claude Code: focus, sub-tasks, labels per repo, and standup/weekly summaries from a change log",
   "license": "MIT",
   "types": "./types/index.d.ts",
@@ -25,6 +25,12 @@
         "mon-fri"
       ],
       "default": "sun-thu"
+    },
+    "autoUpdate": {
+      "type": "boolean",
+      "title": "Auto-update",
+      "description": "Let Claude switch focus and tick sub-tasks on its own from the conversation",
+      "default": true
     }
   }
 }

@@ -50,15 +50,17 @@ test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names',
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
     expect(await texts(ui, /^NOW$/)).toBe('NOW')
-    expect(await texts(ui, /#1 Card research/)).toMatch(/◑ #1 Card research +1\/2$/)
-    expect(await button(ui, 'g2')).toMatch(/○ #2 Demo prep +0%$/)
+    expect(await texts(ui, /Goals/)).toMatch(/^◎ Goals · shop +0\/5$/)
+    expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
+    expect(await texts(ui, /^1\/2$/)).toBe('1/2')
+    expect(await button(ui, 'g2')).toBe('○ #2 Demo prep')
     expect(await button(ui, 's1.1')).toContain('✓ 1.1 Read docs')
     expect(await texts(ui, /^SHOP$/)).toBe('SHOP')
     expect(await texts(ui, /^GENERAL$/)).toBe('GENERAL')
     expect(await texts(ui, /\+1 in other/)).toBe('+1 in other')
     const long = (await button(ui, 'g5'))!
     expect(long.length).toBeLessThanOrEqual(32)
-    expect(long).toMatch(/…\s+0%$/)
+    expect(long).toMatch(/…$/)
     await ui.unmount()
   }
 })
@@ -76,21 +78,6 @@ test('goals finished on an earlier day leave the pane', async ($, on) => {
   await ui.unmount()
 })
 
-const STRIP = { plugin: 'goals', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 3, bodyColumns: 80 } } as never
-
-test('the strip shows the focused goal', async ($, on) => {
-  on('state.get', () => view(state))
-  const ui = await $.ui.mount(STRIP)
-  expect(await texts(ui, /#1 Card research/)).toContain('1/2')
-  await ui.unmount()
-})
-
-test('no focus, no strip', async ($, on) => {
-  on('state.get', () => view(build([{ kind: 'add', texts: ['A'], label: null }])))
-  const ui = await $.ui.mount(STRIP)
-  expect(await texts(ui, /#1 A/)).toBeUndefined()
-  await ui.unmount()
-})
 
 test('commands write goals.json and the month log, summaries add a post', async ($, on) => {
   const files = new Map<string, string>()
@@ -137,4 +124,22 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('focus 3')
   await run('focus off')
   expect(JSON.parse(files.get('/home/u/.claude-goals/goals.json')!).focus).toEqual({})
+})
+
+test('Claude gets the goals with each prompt, and the hint line gets the NOW tail', async ($, on) => {
+  on('state.get', () => view(state))
+  let context: readonly string[] = []
+  let seen: string | undefined
+  on('prompt.submit', (_, e) => ((context = (e as { context?: readonly string[] }).context ?? []), { text: e.text }) as never)
+  on('ui.render', ($, e) => {
+    seen = (e as { props: { tail?: string } }).props.tail
+    const { Text } = $.ui.resolve(e)
+    return <Text>hint</Text>
+  })
+  await $.prompt.submit({ text: 'look at the card pricing', wait: false, origin: { kind: 'composer' } } as never)
+  expect(context.join('\n')).toContain('#1 Card research [shop] (NOW)')
+
+  const ui = await $.ui.mount({ plugin: 'goals', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
+  expect(seen).toBe('· NOW ◑ #1 Card research 1/2')
+  await ui.unmount()
 })

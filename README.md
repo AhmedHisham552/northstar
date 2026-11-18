@@ -6,8 +6,10 @@
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
 
 ```
-NOW
-◑ #3 Ship onboarding guide   2/4
+◎ Goals · my-app          0/4
+──────────────────────────────
+NOW                        2/4
+◑ #3 Ship onboarding guide
    ✓ 3.1 Outline
    ✓ 3.2 First draft
    ○ 3.3 Screenshots
@@ -39,12 +41,14 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 ## Features
 
 - **Side pane** that stays beside the chat, about 32 columns wide.
-- **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and a one-line strip above the prompt keeps it in view.
+- **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
+- **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other labels fold into one line. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
-- **Claude can use it too.** Claude ticks sub-tasks when its work completes them and answers "what did I do this week?" from your log.
+- **Work on goals from one session.** `/goals work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
+- **Ask about your log.** Claude answers "what did I do this week?" from your log.
 
 ## Usage
 
@@ -63,6 +67,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/goals @label` | Expand another label in the pane |
 | `/goals yesterday` / `today` / `week` | Summary for that period |
 | `/goals from 2026-11-01 to 2026-11-15` | Summary for any date range |
+| `/goals work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
 | `/goals done-list` | List finished goals |
 | `/goals` | Open the pane and show help |
 
@@ -71,6 +76,14 @@ Goal numbers (`#3`) are permanent: they never shift when other goals are added o
 In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyboard.
 
 **Ask Claude** in plain words: "add a goal to review the PR for this repo", "tick the screenshots sub-task", "write my standup". Claude uses the plugin's `update_goals` tool, which takes the same commands.
+
+## Working on goals
+
+`/goals work <n> [<n> …]` turns this session into an orchestrator for those goals:
+
+1. **Align.** Claude reads what it can from the code, docs and tools, adds sub-tasks to any goal without them, then asks you every question it needs answered, in one message.
+2. **Dispatch.** Once you confirm, it starts one background agent per goal with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.
+3. **Report.** As agents finish, Claude gives you each result in a few lines and brings you any question raised, then re-dispatches with your answer.
 
 ## Standups and weekly reviews
 
@@ -119,6 +132,7 @@ Run `/plugin`, open **goals**, and set:
 | --- | --- | --- |
 | `dataDir` | `~/.claude-goals` | Folder for `goals.json` and `log/` |
 | `workWeek` | `sun-thu` | Working days for `yesterday` and `week` (`sun-thu` or `mon-fri`) |
+| `autoUpdate` | on | Claude may switch focus and tick sub-tasks on its own from the conversation |
 
 The pane docks beside the chat in the fullscreen layout on a terminal at least 110 columns wide:
 
@@ -130,7 +144,10 @@ Otherwise it shows above the prompt. Drag its edge to resize it; your width is k
 
 ## Data and privacy
 
-Your goals and log stay on your machine, in `dataDir`. The only thing sent anywhere is the summary log, to a Claude model, when you ask for a summary. That is what writes the POST, and it is billed to your Claude Code usage. Nothing is sent for any other command.
+Your goals and log are stored on your machine, in `dataDir`. Two things go to Claude, as part of your normal Claude Code usage:
+
+- **With `autoUpdate` on:** your open goals and sub-tasks are attached to each prompt you send, so Claude can keep them current. Turn `autoUpdate` off to stop this.
+- **When you ask for a summary:** the summary log is sent to a small Claude model to write the POST.
 
 ## Troubleshooting
 

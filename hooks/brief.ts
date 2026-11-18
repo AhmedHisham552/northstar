@@ -1,0 +1,54 @@
+import { glyph, labelKey, progressOf } from './model'
+import type { Goal } from './model'
+import type { View } from '../types'
+
+type Shown = View & { state: NonNullable<View['state']> }
+
+const amount = (g: Goal) => (g.subs.length ? `${g.subs.filter(s => s.done).length}/${g.subs.length}` : progressOf(g) ? `${progressOf(g)}%` : '')
+
+export function focused(v: Shown): Goal | undefined {
+  const id = v.state.focus[v.label] ?? v.state.focus.general
+  return v.state.goals.find(g => g.id === id && !g.doneAt)
+}
+
+// Dim text after the hint line under the prompt.
+export function hintTail(v: Shown): string {
+  const g = focused(v)
+  return g ? `NOW ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
+}
+
+// Added to Claude's instructions each turn so it can keep the tracker current.
+export function goalsBrief(v: Shown): string {
+  const now = focused(v)
+  const open = v.state.goals.filter(g => !g.doneAt)
+  const lines = open.flatMap(g => [
+    `#${g.id} ${g.text} [${labelKey(g.label)}]${g === now ? ' (NOW)' : ''}${amount(g) ? ` ${amount(g)}` : ''}`,
+    ...g.subs.map(s => `  ${g.id}.${s.id} [${s.done ? 'x' : ' '}] ${s.text}`),
+  ])
+  return [
+    "The user's goals (goals plugin). This session's repo label is " + `"${v.label}".`,
+    ...lines,
+    '',
+    'Keep this tracker current with the update_goals tool, without asking:',
+    '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
+    '- When your work finishes a listed sub-task, call "tick <n>.<m>"; when it finishes a goal without sub-tasks, call "done <n>".',
+    '- Do not invent goals; add one only when the user asks.',
+  ].join('\n')
+}
+
+export function workPrompt(goals: Goal[]): string {
+  const list = goals.flatMap(g => [
+    `#${g.id} ${g.text}`,
+    ...g.subs.map(s => `  ${g.id}.${s.id} ${s.done ? '(done) ' : ''}${s.text}`),
+  ])
+  return [
+    `Orchestrate work on my goal${goals.length > 1 ? 's' : ''}:\n${list.join('\n')}`,
+    'Phase 1, align (here, with me): for each goal, gather what you can from the code, docs and tools first. ' +
+      'Goals without sub-tasks get 3-6 concrete ones via update_goals ("sub <n> A; B; C"). ' +
+      'Then ask me, in one message, every question you need answered to finish without me. Wait for my answers and confirmation.',
+    'Phase 2, dispatch: once I confirm, start one background agent per goal with a self-contained brief (goal, sub-tasks, my answers, constraints). ' +
+      'Each agent ticks its sub-tasks with update_goals ("tick <n>.<m> \"short note\"") as it finishes them, does not guess on open questions, ' +
+      'and if blocked returns the exact question instead of continuing.',
+    'Phase 3, report: as each agent finishes, give me its result in a few lines and ask me any question it raised. Re-dispatch with my answer when needed.',
+  ].join('\n\n')
+}
