@@ -25,7 +25,7 @@ const view = { state, label: 'shop', today: '2026-11-18', expanded: null }
 
 test('the brief lists open goals with sub-tasks and tells Claude when to update', () => {
   const b = goalsBrief(view)
-  expect(b).toContain('#1 Card research [shop] (FOCUS)')
+  expect(b).toContain('#1 Card research [shop] (NOW)')
   expect(b).toContain('1.1 [ ] Read docs')
   expect(b).toContain('#3 Write post [general]')
   expect(b).not.toContain('Done thing')
@@ -35,7 +35,7 @@ test('the brief lists open goals with sub-tasks and tells Claude when to update'
 })
 
 test('the hint tail names the focused goal, and is empty without focus', () => {
-  expect(hintTail(view)).toBe('◎ FOCUS ○ #1 Card research 0/2')
+  expect(hintTail(view)).toBe('◎ NOW ○ #1 Card research 0/2')
   expect(hintTail({ ...view, state: build([{ kind: 'add', texts: ['A'], label: null }]) })).toBe('')
 })
 

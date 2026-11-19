@@ -45,11 +45,11 @@ const button = async (ui: { find: (q: object) => Promise<Found | undefined> }, k
   return b?.label ?? b?.props?.label ?? b?.text
 }
 
-test('pane shows FOCUS with sub-tasks, groups, folded labels and cuts long names', async ($, on) => {
+test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names', async ($, on) => {
   on('state.get', () => view(state))
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
-    expect(await texts(ui, /^FOCUS$/)).toBe('FOCUS')
+    expect(await texts(ui, /^NOW$/)).toBe('NOW')
     expect(await texts(ui, /Goals/)).toBe('◎ Waypoint · Goals')
     expect(await texts(ui, /^0\/5$/)).toBe('0/5')
     expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
@@ -150,7 +150,7 @@ test('commands write goals.json and the month log, summaries add a post', async 
   expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).focus).toEqual({})
 })
 
-test('Claude gets the goals with each prompt, and the hint line gets the FOCUS tail', async ($, on) => {
+test('Claude gets the goals with each prompt, and the hint line gets the NOW tail', async ($, on) => {
   on('state.get', () => view(state))
   let context: readonly string[] = []
   let seen: string | undefined
@@ -161,10 +161,10 @@ test('Claude gets the goals with each prompt, and the hint line gets the FOCUS t
     return <Text>hint</Text>
   })
   await $.prompt.submit({ text: 'look at the card pricing', wait: false, origin: { kind: 'composer' } } as never)
-  expect(context.join('\n')).toContain('#1 Card research [shop] (FOCUS)')
+  expect(context.join('\n')).toContain('#1 Card research [shop] (NOW)')
 
   const ui = await $.ui.mount({ plugin: 'waypoint', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
-  expect(seen).toBe('· ◎ FOCUS ◑ #1 Card research 1/2')
+  expect(seen).toBe('· ◎ NOW ◑ #1 Card research 1/2')
   await ui.unmount()
 })
 

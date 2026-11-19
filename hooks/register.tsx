@@ -37,7 +37,7 @@ export const HELP = [
   '/track <n> <0-100> ["note"]      set progress (goals without sub-tasks)',
   '/track done <n> ["note"]         mark goal n done',
   '/track rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
-  '/track focus <n> | focus off     set or clear the FOCUS goal',
+  '/track focus <n> | focus off     set or clear the NOW goal',
   '/track start <n|n.m> … | stop    mark work in progress (spins in the pane)',
   '/track tag <n> @label|@general   move a goal to a label',
   '/track @label                    open / close a label in the pane',
