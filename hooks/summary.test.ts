@@ -44,11 +44,11 @@ test('a day summary lists planned, done, moved and still open', () => {
     [
       'Tue 17 Nov',
       'PLANNED     4 goals open, focus: Card research',
-      'DONE        ✓ Pricing call (Card research)',
+      'DONE        ◑ Card research  1/2',
+      '              ✓ Pricing call',
       '                sandbox next week',
       '            ✓ Security review',
-      'MOVED       ○→◑ Card research  0/2 → 1/2',
-      '            ◔→◑ Demo prep  20% → 60%',
+      'MOVED       ◔→◑ Demo prep  20% → 60%',
       'STILL OPEN  Partner API',
     ].join('\n'),
   )
@@ -69,4 +69,21 @@ test('final-review: the post prompt fits the period', () => {
   expect(postPrompt('LOG', 'day')).toContain('standup')
   expect(postPrompt('LOG', 'span')).toContain('weekly review')
   expect(postPrompt('LOG', 'span')).not.toContain('Yesterday')
+})
+
+test('a sub-task ticked, unticked and ticked again counts once; a reopened goal is not done', () => {
+  const at = (h: number) => new Date(2026, 10, 17, h).toISOString()
+  const sub = (type: string, h: number): Event => ({ at: at(h), type, goal: 1, sub: 1, label: null, text: 'Draft' })
+  const log: Event[] = [
+    { at: new Date(2026, 10, 16).toISOString(), type: 'goal.add', goal: 1, label: null, text: 'Ship docs' },
+    { at: new Date(2026, 10, 16).toISOString(), type: 'sub.add', goal: 1, sub: 1, label: null, text: 'Draft' },
+    { at: new Date(2026, 10, 16).toISOString(), type: 'sub.add', goal: 1, sub: 2, label: null, text: 'Review' },
+    sub('sub.done', 9), sub('sub.undone', 10), sub('sub.done', 11),
+    { at: at(12), type: 'goal.done', goal: 1, label: null, text: 'Ship docs' },
+    { at: at(13), type: 'goal.reopen', goal: 1, label: null, text: 'Ship docs' },
+  ]
+  const out = summarize(log, new Date(2026, 10, 17), new Date(2026, 10, 18), 'Tue 17 Nov', false)
+  expect(out.match(/✓ Draft/g)?.length).toBe(1)
+  expect(out).toContain('◑ Ship docs  1/2')
+  expect(out).not.toContain('✓ Ship docs')
 })

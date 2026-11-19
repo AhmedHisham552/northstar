@@ -126,25 +126,26 @@ const KEYS = /^(PLANNED|DONE|MOVED|STILL OPEN)?\s*$/
 export function summaryTree(ui: Els, text: string) {
   const { Box, Text } = ui
   const [log = '', post = ''] = text.split('\n\nPOST\n')
+  // The engine prefixes the plugin's name; notes stay in the text Claude reads and are left off screen.
   const [title = '', ...lines] = log.split('\n')
   return (
     <Box flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor="subtle" paddingX={1}>
-        <Text bold>{title}</Text>
-        {lines.map(l => {
+        <Text bold>{title.replace(/^[\w-]+: /, '')}</Text>
+        {lines.filter(l => !l.startsWith(' '.repeat(16))).map(l => {
           if (!l.trim()) return <Text> </Text>
-          if (l.startsWith(' '.repeat(16))) return <Text dimColor>{l}</Text>
           const key = l.slice(0, 12)
           if (l.length > 12 && KEYS.test(key)) {
             const v = l.slice(12)
+            const tick = v.match(/^(\s*)✓(.*)$/)
             return (
-              <Text>
+              <Text wrap="truncate-end">
                 <Text color={ACCENT} bold>{key}</Text>
-                {v.startsWith('✓') ? [<Text color="success">✓</Text>, v.slice(1)] : v}
+                {tick ? [tick[1], <Text color="success">✓</Text>, <Text dimColor={!!tick[1]}>{tick[2]}</Text>] : v}
               </Text>
             )
           }
-          return l.startsWith(' ') ? <Text dimColor>{l}</Text> : <Text color="subtle" bold>{l}</Text>
+          return <Text color="subtle" bold>{l}</Text>
         })}
       </Box>
       {post && (

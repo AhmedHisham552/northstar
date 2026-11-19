@@ -135,7 +135,7 @@ test('commands write goals.json and the month log, summaries add a post', async 
   expect(await run('rm 3')).toBe('no goal #3')
 
   const today = await run('today')
-  expect(today).toContain('DONE        ✓ Read docs (Card research)')
+  expect(today).toContain('DONE        ◑ Card research  1/2\n              ✓ Read docs')
   expect(today).toContain('quick win')
   expect(today).toContain('POST\nToday I ticked Read docs.')
   expect(prompts[0]).toContain('Read docs')

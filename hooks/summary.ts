@@ -101,13 +101,23 @@ export function summarize(events: Event[], from: Date, to: Date, title: string, 
   const focusText = [...start.focus.values()].map(id => start.goals.get(id)?.text).filter(Boolean).join(', ')
   const planned: Line[] = [{ label: null, text: `${open.length} goals open${focusText ? `, focus: ${focusText}` : ''}` }]
 
-  const done: Line[] = inRange
-    .filter(e => e.type === 'sub.done' || e.type === 'goal.done')
-    .map(e => ({
-      label: e.label,
-      text: e.type === 'sub.done' ? `✓ ${e.text} (${end.goals.get(e.goal)?.text ?? `#${e.goal}`})` : `✓ ${e.text}`,
-      ...(e.note ? { note: e.note } : {}),
-    }))
+  // Each goal and sub-task counts by its last change in the period: ticked, unticked and ticked again is one tick.
+  const last = new Map<string, Event>()
+  for (const e of inRange) if (/^(sub\.(done|undone)|goal\.(done|reopen))$/.test(e.type)) last.set(e.type.startsWith('sub') ? `${e.goal}.${e.sub}` : `${e.goal}`, e)
+  const finished = [...last.values()].filter(e => e.type === 'sub.done' || e.type === 'goal.done')
+  // Done sub-tasks sit under their goal; the goal line shows a tick, or how far it got.
+  const done: Line[] = []
+  const grouped = new Set<number>()
+  for (const id of [...new Set(finished.map(e => e.goal))]) {
+    const g = end.goals.get(id)
+    const own = finished.find(e => e.goal === id && e.type === 'goal.done')
+    const subs = finished.filter(e => e.goal === id && e.type === 'sub.done')
+    const text = g?.text ?? own?.text ?? `#${id}`
+    const head = own ? `✓ ${text}` : g ? `${glyph(pct(g))} ${text}  ${amount(g)}` : text
+    done.push({ label: g?.label ?? own?.label ?? null, text: head, ...(own?.note ? { note: own.note } : {}) })
+    for (const e of subs) done.push({ label: e.label, text: `  ✓ ${e.text}`, ...(e.note ? { note: e.note } : {}) })
+    grouped.add(id)
+  }
 
   const moved: Line[] = []
   const still: Line[] = []
@@ -116,6 +126,7 @@ export function summarize(events: Event[], from: Date, to: Date, title: string, 
     const before = start.goals.get(id)
     const a = before ? pct(before) : 0
     const b = pct(g)
+    if (grouped.has(id)) continue
     if (touched.has(id) && b > a) {
       const note = inRange.filter(e => e.goal === id && e.type === 'goal.progress' && e.note).map(e => e.note).join('; ')
       moved.push({ label: g.label, text: `${glyph(a)}→${glyph(b)} ${g.text}  ${before ? amount(before) : '0%'} → ${amount(g)}`, ...(note ? { note } : {}) })

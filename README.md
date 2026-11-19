@@ -95,8 +95,8 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 ```
 Tue 17 Nov
 PLANNED     4 goals open, focus: Ship onboarding guide
-DONE        ✓ First draft (Ship onboarding guide)
-                sent to the team for comments
+DONE        ◑ Ship onboarding guide  2/4
+              ✓ First draft
             ✓ Fix flaky login test
 MOVED       ◔→◑ Prepare demo  1/4 → 2/4
 STILL OPEN  Migrate settings page
@@ -108,7 +108,7 @@ Today I'll add screenshots to the guide.
 ```
 
 - **PLANNED:** goals open at the start of the period, and what was in focus.
-- **DONE:** goals and sub-tasks finished in the period, with their notes.
+- **DONE:** goals finished in the period, and finished sub-tasks under their goal. Each counts once, by its last state. Notes are left off screen but go into the post.
 - **MOVED:** goals that made progress but are not finished.
 - **STILL OPEN:** goals that did not move.
 - **POST:** a short update written by a small Claude model from the log above, and only from it: a standup update for a day, a short review for `week` and date ranges.
