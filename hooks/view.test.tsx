@@ -164,7 +164,7 @@ test('Claude gets the goals with each prompt, and the hint line gets the NOW tai
   expect(context.join('\n')).toContain('#1 Card research [shop] (NOW)')
 
   const ui = await $.ui.mount({ plugin: 'waypoint', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
-  expect(seen).toBe('· NOW ◑ #1 Card research 1/2')
+  expect(seen).toBe('· ◎ NOW ◑ #1 Card research 1/2')
   await ui.unmount()
 })
 
