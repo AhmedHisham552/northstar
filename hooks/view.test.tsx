@@ -50,7 +50,7 @@ test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names',
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
     expect(await texts(ui, /^NOW$/)).toBe('NOW')
-    expect(await texts(ui, /Goals/)).toBe('◎ Goals · shop')
+    expect(await texts(ui, /Goals/)).toBe('◎ Goals')
     expect(await texts(ui, /^0\/5$/)).toBe('0/5')
     expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
     expect(await texts(ui, /^1\/2$/)).toBe('1/2')
