@@ -14,7 +14,6 @@ export const fit = (text: string, width: number) => (text.length <= width ? text
 
 // Only show a count once there is something to count.
 const amount = (g: Goal) => (g.subs.length ? `${g.subs.filter(s => s.done).length}/${g.subs.length}` : progressOf(g) && !g.doneAt ? `${progressOf(g)}%` : '')
-const row = (left: string, right: string, width: number) => (right ? `${fit(left, width - right.length - 1).padEnd(width - right.length)}${right}` : fit(left, width))
 
 export const focusedGoal = focused
 
@@ -102,18 +101,23 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
       )}
       {groups.map(([name, list]) => (
         <Box flexDirection="column" marginBottom={1}>
-          <Text color="subtle">{name}</Text>
+          <Text color={ACCENT} bold>{name}</Text>
           {list.map(g => goalRow(ui, g, width, act))}
         </Box>
       ))}
       {[...others].map(([label, list]) =>
         v.expanded === label ? (
           <Box flexDirection="column" marginBottom={1}>
-            <Button key={`l${label}`} plain dimColor label={`▾ ${label}`} onPress={() => act.toggle(label)} />
+            <Button key={`l${label}`} plain onPress={() => act.toggle(label)}>
+              <Text color={ACCENT}>{`▾ ${label}`}</Text>
+            </Button>
             {list.map(g => goalRow(ui, g, width, act))}
           </Box>
         ) : (
-          <Button key={`l${label}`} plain dimColor label={row(`▸ ${label}`, String(list.length), width)} onPress={() => act.toggle(label)} />
+          <Button key={`l${label}`} plain onPress={() => act.toggle(label)}>
+            <Text color={ACCENT}>{fit(`▸ ${label}`, width - String(list.length).length - 1).padEnd(width - String(list.length).length)}</Text>
+            <Text color="subtle">{String(list.length)}</Text>
+          </Button>
         ),
       )}
     </Box>
