@@ -14,7 +14,7 @@ export function focused(v: Shown): Goal | undefined {
 // Dim text after the hint line under the prompt.
 export function hintTail(v: Shown): string {
   const g = focused(v)
-  return g ? `◎ NOW ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
+  return g ? `◎ Now ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
 }
 
 // Added to Claude's instructions each turn so it can keep the tracker current.

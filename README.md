@@ -8,20 +8,20 @@
 ```
 ◎ Waypoint · Goals        0/4
 ──────────────────────────────
-NOW                        2/4
+Now                        2/4
 ◑ #3 Ship onboarding guide
    ✓ 3.1 Outline
    ✓ 3.2 First draft
    ○ 3.3 Screenshots
    ○ 3.4 Review
 
-MY-APP
+my-app
 ○ #6 Fix flaky login test    0%
 
-GENERAL
+General
 ◕ #2 Prepare demo            3/4
 
-▸ OTHER-REPO                 2
+▸ other-repo                 2
 ```
 
 ## Quick start

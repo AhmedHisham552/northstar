@@ -35,7 +35,7 @@ test('the brief lists open goals with sub-tasks and tells Claude when to update'
 })
 
 test('the hint tail names the focused goal, and is empty without focus', () => {
-  expect(hintTail(view)).toBe('◎ NOW ○ #1 Card research 0/2')
+  expect(hintTail(view)).toBe('◎ Now ○ #1 Card research 0/2')
   expect(hintTail({ ...view, state: build([{ kind: 'add', texts: ['A'], label: null }]) })).toBe('')
 })
 

@@ -72,8 +72,8 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const groups: [string, Goal[]][] = []
   const here = rest.filter(g => g.label === v.label)
   const general = rest.filter(g => g.label === null)
-  if (here.length) groups.push([v.label.toUpperCase(), here])
-  if (general.length) groups.push(['GENERAL', general])
+  if (here.length) groups.push([v.label, here])
+  if (general.length) groups.push(['General', general])
   // Other repos' labels: a header to open and close, with their goals only while open.
   const others = new Map<string, Goal[]>()
   for (const g of rest) if (g.label !== null && g.label !== v.label) others.set(g.label, [...(others.get(g.label) ?? []), g])
@@ -84,7 +84,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
       {now && (
         <Box flexDirection="column" marginBottom={1}>
           <Box justifyContent="space-between">
-            <Text color={ACCENT} bold>NOW</Text>
+            <Text color={ACCENT} bold>Now</Text>
             {amount(now) && <Text color="subtle">{amount(now)}</Text>}
           </Box>
           <Text bold wrap="wrap">
@@ -109,11 +109,11 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
       {[...others].map(([label, list]) =>
         v.expanded === label ? (
           <Box flexDirection="column" marginBottom={1}>
-            <Button key={`l${label}`} plain dimColor label={`▾ ${label.toUpperCase()}`} onPress={() => act.toggle(label)} />
+            <Button key={`l${label}`} plain dimColor label={`▾ ${label}`} onPress={() => act.toggle(label)} />
             {list.map(g => goalRow(ui, g, width, act))}
           </Box>
         ) : (
-          <Button key={`l${label}`} plain dimColor label={row(`▸ ${label.toUpperCase()}`, String(list.length), width)} onPress={() => act.toggle(label)} />
+          <Button key={`l${label}`} plain dimColor label={row(`▸ ${label}`, String(list.length), width)} onPress={() => act.toggle(label)} />
         ),
       )}
     </Box>
