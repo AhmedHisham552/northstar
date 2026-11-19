@@ -197,7 +197,7 @@ export const register: Register = (on, options) => {
     if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress'].includes(cmd.op.kind) && !result.startsWith('no ')) {
       const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
       const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /track focus ${prev} to undo` : ''
-      $.ui.toast(`Goals: ${result.split('\n').at(-1)}${undo}`)
+      $.ui.toast(`Waypoint: ${result.split('\n').at(-1)}${undo}`)
     }
     return { result } as never
   })

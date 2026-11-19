@@ -6,7 +6,7 @@
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
 
 ```
-◎ Goals                   0/4
+◎ Waypoint · Goals        0/4
 ──────────────────────────────
 NOW                        2/4
 ◑ #3 Ship onboarding guide
