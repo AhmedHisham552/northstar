@@ -14,7 +14,7 @@ export function focused(v: Shown): Goal | undefined {
 // Dim text after the hint line under the prompt.
 export function hintTail(v: Shown): string {
   const g = focused(v)
-  return g ? `◎ NOW ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
+  return g ? `◎ FOCUS ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
 }
 
 // Added to Claude's instructions each turn so it can keep the tracker current.
@@ -22,7 +22,7 @@ export function goalsBrief(v: Shown): string {
   const now = focused(v)
   const open = v.state.goals.filter(g => !g.doneAt)
   const lines = open.flatMap(g => [
-    `#${g.id} ${g.text} [${labelKey(g.label)}]${g === now ? ' (NOW)' : ''}${amount(g) ? ` ${amount(g)}` : ''}`,
+    `#${g.id} ${g.text} [${labelKey(g.label)}]${g === now ? ' (FOCUS)' : ''}${amount(g) ? ` ${amount(g)}` : ''}`,
     ...g.subs.map(s => `  ${g.id}.${s.id} [${s.done ? 'x' : ' '}] ${s.text}`),
   ])
   return [
@@ -30,7 +30,7 @@ export function goalsBrief(v: Shown): string {
     ...lines,
     '',
     'Keep this tracker current with the update_goals tool, without asking:',
-    '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
+    '- When the user prompts about work that clearly belongs to a different open goal than the FOCUS one, call update_goals with "focus <n>" first.',
     '- When you begin a listed sub-task, call "start <n>.<m>" (it spins in the pane); "start <n>" for a goal without sub-tasks.',
     '- When your work finishes a listed sub-task, call "tick <n>.<m>"; when it finishes a goal without sub-tasks, call "done <n>".',
     '- Do not invent goals; add one only when the user asks.',

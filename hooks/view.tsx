@@ -84,7 +84,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
       {now && (
         <Box flexDirection="column" marginBottom={1}>
           <Box justifyContent="space-between">
-            <Text color={ACCENT} bold>NOW</Text>
+            <Text color={ACCENT} bold>FOCUS</Text>
             {amount(now) && <Text color="subtle">{amount(now)}</Text>}
           </Box>
           <Text bold wrap="wrap">

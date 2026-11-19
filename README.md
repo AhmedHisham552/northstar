@@ -8,7 +8,7 @@
 ```
 ◎ Waypoint · Goals        0/4
 ──────────────────────────────
-NOW                        2/4
+FOCUS                      2/4
 ◑ #3 Ship onboarding guide
    ✓ 3.1 Outline
    ✓ 3.2 First draft
@@ -41,7 +41,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 ## Features
 
 - **Side pane** that stays beside the chat, about 32 columns wide.
-- **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
+- **Focus.** One goal is in *FOCUS*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.2 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
@@ -63,7 +63,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track 3 60 "note"` | Set progress of a goal without sub-tasks |
 | `/track done 3` | Mark goal #3 done |
 | `/track rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
-| `/track focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
+| `/track focus 3` / `focus off` | Set or clear the FOCUS goal for that goal's label |
 | `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
 | `/track tag 3 @label` | Move a goal to a label (`@general` to clear) |
 | `/track @label` | Open or close another label in the pane (or click its header) |
@@ -123,7 +123,7 @@ Today I'll add screenshots to the guide.
 
   Plain files, so you can back them up, sync them or grep them. They survive reinstalling the plugin.
 - **Labels.** `@here` resolves to the folder name of the repo's main checkout (`git rev-parse --git-common-dir`), so worktrees share a label. Outside git it is the current folder's name.
-- **Focus.** One NOW goal per label. A session shows the focus of its repo's label, or General's when that label has none.
+- **Focus.** One FOCUS goal per label. A session shows the focus of its repo's label, or General's when that label has none.
 - **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/track done-list`.
 - **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. Every open pane picks up changes from other sessions within a few seconds. In the rare case two sessions write in the same instant, one log line can be lost.
 
