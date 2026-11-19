@@ -50,6 +50,9 @@ test('final-review: v1 commands do not become goals', () => {
   expect(parse('clear')).toEqual({ kind: 'help' })
   expect(parse('history 7')).toEqual({ kind: 'help' })
   expect(parse('list')).toEqual({ kind: 'help' })
+  expect(parse('help')).toEqual({ kind: 'help' })
+  expect(parse('8')).toEqual({ kind: 'help' })
+  expect(parse('#8')).toEqual({ kind: 'help' })
 })
 
 test('work starts a goal', () => {

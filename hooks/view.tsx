@@ -64,7 +64,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
       <Box flexDirection="column">
         {header}
         <Text color="subtle">No goals yet.</Text>
-        <Text color="subtle">/goals add &lt;text&gt;</Text>
+        <Text color="subtle">/track add &lt;text&gt;</Text>
       </Box>
     )
   const now = focusedGoal(v)

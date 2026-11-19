@@ -1,6 +1,6 @@
-# goals
+# Waypoint
 
-**A goals pane for Claude Code.** Keep the few things you want to get done beside the chat, see what you are working on *now*, tick sub-tasks as you go, and get your standup or weekly review written for you from what actually happened.
+**A goals pane for Claude Code, driven by `/track`.** Keep the few things you want to get done beside the chat, see what you are working on *now*, tick sub-tasks as you go, and get your standup or weekly review written for you from what actually happened.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
@@ -27,15 +27,15 @@ GENERAL
 ## Quick start
 
 ```
-/plugin install goals --marketplace AhmedHisham552/claude-goals
+/plugin install waypoint --marketplace AhmedHisham552/waypoint
 ```
 
 Answer `y` to add the marketplace, then pick **user** scope so the pane is there in every project. Then:
 
 ```
-/goals add @here Ship onboarding guide; Fix flaky login test
-/goals sub 1 Outline; First draft; Screenshots; Review
-/goals focus 1
+/track add @here Ship onboarding guide; Fix flaky login test
+/track sub 1 Outline; First draft; Screenshots; Review
+/track focus 1
 ```
 
 ## Features
@@ -48,31 +48,31 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
-- **Work on goals from one session.** `/goals:work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
+- **Work on goals from one session.** `/waypoint:work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
 - **Ask about your log.** Claude answers "what did I do this week?" from your log.
 
 ## Usage
 
 | Command | What it does |
 | --- | --- |
-| `/goals add A; B` | Add goals to General (`add` is optional) |
-| `/goals add @here A` | Add a goal to the repo you are in |
-| `/goals add @label A` | Add a goal to any label |
-| `/goals sub 3 A; B` | Add sub-tasks to goal #3 |
-| `/goals tick 3.2 "note"` | Tick (or untick) sub-task 3.2, with an optional note |
-| `/goals 3 60 "note"` | Set progress of a goal without sub-tasks |
-| `/goals done 3` | Mark goal #3 done |
-| `/goals rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
-| `/goals focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
-| `/goals start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
-| `/goals tag 3 @label` | Move a goal to a label (`@general` to clear) |
-| `/goals @label` | Open or close another label in the pane (or click its header) |
-| `/goals yesterday` / `today` / `week` | Summary for that period |
-| `/goals from 2026-11-01 to 2026-11-15` | Summary for any date range |
-| `/goals:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
-| `/goals:work 2.4 2.5 workflow` | Work on chosen sub-tasks only, run as workflows |
-| `/goals done-list` | List finished goals |
-| `/goals` | Open the pane and show help |
+| `/track add A; B` | Add goals to General (`add` is optional) |
+| `/track add @here A` | Add a goal to the repo you are in |
+| `/track add @label A` | Add a goal to any label |
+| `/track sub 3 A; B` | Add sub-tasks to goal #3 |
+| `/track tick 3.2 "note"` | Tick (or untick) sub-task 3.2, with an optional note |
+| `/track 3 60 "note"` | Set progress of a goal without sub-tasks |
+| `/track done 3` | Mark goal #3 done |
+| `/track rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
+| `/track focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
+| `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
+| `/track tag 3 @label` | Move a goal to a label (`@general` to clear) |
+| `/track @label` | Open or close another label in the pane (or click its header) |
+| `/track yesterday` / `today` / `week` | Summary for that period |
+| `/track from 2026-11-01 to 2026-11-15` | Summary for any date range |
+| `/waypoint:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
+| `/waypoint:work 2.4 2.5 workflow` | Work on chosen sub-tasks only, run as workflows |
+| `/track done-list` | List finished goals |
+| `/track` | Open the pane and show help |
 
 Goal numbers (`#3`) are permanent: they never shift when other goals are added or removed. Sub-tasks are `goal.sub` (`3.2`).
 
@@ -82,7 +82,7 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Working on goals
 
-`/goals:work <n|n.m> … [agents|workflow]` (a skill that ships with the plugin) turns this session into an orchestrator. Pass whole goals (`1 3`), chosen sub-tasks (`2.4 2.5`), or both:
+`/waypoint:work <n|n.m> … [agents|workflow]` (a skill that ships with the plugin) turns this session into an orchestrator. Pass whole goals (`1 3`), chosen sub-tasks (`2.4 2.5`), or both:
 
 1. **Align.** Claude reads what it can from the code, docs and tools, adds sub-tasks to any goal without them, then asks you every question it needs answered, in one message.
 2. **Dispatch.** Once you confirm, it starts one background agent per goal, or one workflow per goal with `workflow` (or the `dispatch` setting), each with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.
@@ -90,7 +90,7 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Standups and weekly reviews
 
-`/goals yesterday` (the last *working* day):
+`/track yesterday` (the last *working* day):
 
 ```
 Tue 17 Nov
@@ -117,34 +117,34 @@ Today I'll add screenshots to the guide.
 
 ## How it works
 
-- **Files.** Everything lives in one folder (default `~/.claude-goals`):
+- **Files.** Everything lives in one folder (default `~/.waypoint`; an install from before the rename keeps reading `~/.claude-goals`):
   - `goals.json`: the current goals.
   - `log/YYYY-MM.jsonl`: one line per change, one file per month.
 
   Plain files, so you can back them up, sync them or grep them. They survive reinstalling the plugin.
 - **Labels.** `@here` resolves to the folder name of the repo's main checkout (`git rev-parse --git-common-dir`), so worktrees share a label. Outside git it is the current folder's name.
 - **Focus.** One NOW goal per label. A session shows the focus of its repo's label, or General's when that label has none.
-- **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/goals done-list`.
+- **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/track done-list`.
 - **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. Every open pane picks up changes from other sessions within a few seconds. In the rare case two sessions write in the same instant, one log line can be lost.
 
 ## Configuration
 
-Run `/plugin`, open **goals**, and set:
+Run `/plugin`, open **waypoint**, and set:
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `dataDir` | `~/.claude-goals` | Folder for `goals.json` and `log/` |
+| `dataDir` | `~/.waypoint` | Folder for `goals.json` and `log/` |
 | `workWeek` | `sun-thu` | Working days for `yesterday` and `week` (`sun-thu` or `mon-fri`) |
 | `autoUpdate` | on | Claude may switch focus and tick sub-tasks on its own from the conversation |
-| `dispatch` | `agents` | How `/goals:work` runs each goal: `agents` (lighter) or `workflow` (more thorough, uses more agents) |
+| `dispatch` | `agents` | How `/waypoint:work` runs each goal: `agents` (lighter) or `workflow` (more thorough, uses more agents) |
 
-The pane docks beside the chat in the fullscreen layout on a terminal at least 110 columns wide:
+The pane docks beside the chat in the fullscreen layout on a terminal at least 110 columns wide. To have that in every session, with no flag to remember, add this to `~/.claude/settings.json`:
 
+```json
+{ "env": { "CLAUDE_CODE_NO_FLICKER": "1" } }
 ```
-CLAUDE_CODE_NO_FLICKER=1 claude
-```
 
-Otherwise it shows above the prompt. Drag its edge to resize it; your width is kept.
+Otherwise it shows above the prompt. Run `/track` once: from then on the pane docks by itself from 110 columns (144 before you have opened it). Drag its edge to resize it; your width is kept.
 
 ## Data and privacy
 
@@ -155,15 +155,15 @@ Your goals and log are stored on your machine, in `dataDir`. Two things go to Cl
 
 ## Troubleshooting
 
-- **The pane is not beside the chat.** Use the fullscreen layout (above) and a terminal at least 110 columns wide, or open the pane with `/goals`.
+- **The pane is not beside the chat.** Use the fullscreen layout (above) and a terminal at least 110 columns wide, or open the pane with `/track`.
 - **The circles look misaligned.** Some fonts draw `◔ ◑ ◕` at a different width. Please open an issue with your terminal and font.
 - **My v0.1 goals are gone.** v0.2 imports them once, on its first start, into the `dataDir` set at that moment. If you changed `dataDir` later, move the files from the old folder into the new one.
 
 ## Development
 
 ```
-git clone https://github.com/AhmedHisham552/claude-goals
-cd claude-goals
+git clone https://github.com/AhmedHisham552/waypoint
+cd waypoint
 claude --plugin-dir .        # run it from this folder
 claude plugin validate .
 claude plugin test .

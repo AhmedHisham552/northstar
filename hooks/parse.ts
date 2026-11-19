@@ -31,7 +31,7 @@ export function parse(args: string): Cmd {
   if (!cmd) return HELP
   if (cmd === 'yesterday' || cmd === 'today' || cmd === 'week') return { kind: 'summary', period: cmd }
   if (cmd === 'done-list') return { kind: 'doneList' }
-  if (cmd === 'clear' || cmd === 'history' || cmd === 'list') return HELP // v1 commands, not goal names
+  if (['clear', 'history', 'list', 'help'].includes(cmd) || (words.length === 1 && goalNo(cmd))) return HELP // command words and bare numbers, not goal names
   if (cmd === 'from') return isDate(a) && b === 'to' && isDate(words[3] ?? '') ? { kind: 'range', from: a, to: words[3]! } : HELP
   if (cmd.startsWith('@') && words.length === 1) return { kind: 'show', label: cmd.slice(1).toLowerCase() }
 

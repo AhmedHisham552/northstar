@@ -1,13 +1,13 @@
 {
-  "name": "claude-goals",
+  "name": "waypoint",
   "owner": {
     "name": "Ahmed Hisham"
   },
   "plugins": [
     {
-      "name": "goals",
+      "name": "waypoint",
       "source": "./"
     }
   ],
-  "description": "A goals pane with progress bars for Claude Code"
+  "description": "Waypoint: a goals pane for Claude Code, with focus, sub-tasks and standups"
 }

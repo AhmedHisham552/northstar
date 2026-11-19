@@ -15,6 +15,6 @@ export type View = { state: State | null; label: string; today: string; expanded
 
 declare module 'claude-code' {
   interface PluginState {
-    goals: { view: View | null; frame: number | null }
+    waypoint: { view: View | null; frame: number | null }
   }
 }

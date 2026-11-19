@@ -14,11 +14,11 @@ import { goalsBrief, hintTail, workPrompt } from './brief'
 import { paneTree, summaryTree } from './view'
 import type { View } from './view'
 
-const PANE = 'goals'
-const TOOL = 'mcp__goals__update_goals'
+const PANE = 'waypoint'
+const TOOL = 'mcp__waypoint__update_goals'
 const MODEL = 'claude-haiku-5-5'
-const view = atom({ plugin: 'goals', key: 'view' } as const, null as View | null)
-const frame = atom({ plugin: 'goals', key: 'frame' } as const, null as number | null)
+const view = atom({ plugin: 'waypoint', key: 'view' } as const, null as View | null)
+const frame = atom({ plugin: 'waypoint', key: 'frame' } as const, null as number | null)
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 // Advance the spinner only while something is in progress, so an idle pane never redraws.
@@ -31,20 +31,20 @@ async function spinTick($: Engine) {
 }
 
 export const HELP = [
-  '/goals add [@label|@here] A; B   add goals (General by default)',
-  '/goals sub <n> A; B              add sub-tasks to goal n',
-  '/goals tick <n>.<m> ["note"]     tick / untick a sub-task',
-  '/goals <n> <0-100> ["note"]      set progress (goals without sub-tasks)',
-  '/goals done <n> ["note"]         mark goal n done',
-  '/goals rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
-  '/goals focus <n> | focus off     set or clear the NOW goal',
-  '/goals start <n|n.m> … | stop    mark work in progress (spins in the pane)',
-  '/goals tag <n> @label|@general   move a goal to a label',
-  '/goals @label                    open / close a label in the pane',
-  '/goals yesterday | today | week  summary with a ready-to-post update',
-  '/goals from YYYY-MM-DD to YYYY-MM-DD',
-  '/goals:work <n|n.m> … [workflow] align here, then dispatch agents or workflows',
-  '/goals done-list                 finished goals',
+  '/track add [@label|@here] A; B   add goals (General by default)',
+  '/track sub <n> A; B              add sub-tasks to goal n',
+  '/track tick <n>.<m> ["note"]     tick / untick a sub-task',
+  '/track <n> <0-100> ["note"]      set progress (goals without sub-tasks)',
+  '/track done <n> ["note"]         mark goal n done',
+  '/track rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
+  '/track focus <n> | focus off     set or clear the NOW goal',
+  '/track start <n|n.m> … | stop    mark work in progress (spins in the pane)',
+  '/track tag <n> @label|@general   move a goal to a label',
+  '/track @label                    open / close a label in the pane',
+  '/track yesterday | today | week  summary with a ready-to-post update',
+  '/track from YYYY-MM-DD to YYYY-MM-DD',
+  '/waypoint:work <n|n.m> … [workflow] align here, then dispatch agents or workflows',
+  '/track done-list                 finished goals',
 ].join('\n')
 
 type Opts = { dataDir: string | undefined; workWeek: WorkWeek; autoUpdate: boolean; dispatch: 'agents' | 'workflow' }
@@ -159,30 +159,30 @@ export const register: Register = (on, options) => {
     const label = await repoLabel((argv, init) => $.process.run(argv, init), e.cwd)
     const state = await loadState(io, d)
     await update($, view, () => ({ state, label, today: at.slice(0, 10), expanded: null }))
-    await $.command.register({ name: 'goals', description: 'Goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
+    await $.command.register({ name: 'track', description: 'Waypoint goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
     await $.tool.register({
       name: 'update_goals',
       description:
-        "Read or change the user's goals pane, or get a summary. Takes one /goals command line without the slash word, e.g. " +
+        "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
         '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
       inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },
     })
-    void $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
+    void $.ui.open({ id: PANE, title: 'Waypoint', columns: 32, backgroundColor: 'transparent' })
     // ponytail: 4s mtime poll; a file watcher if the API ever offers one.
     $.clock.every(4000, () => void refresh($, o))
     $.clock.every(120, () => void spinTick($))
     return next(e)
   })
 
-  on('command.run', { command: 'goals' }, async ($, e) => {
-    await $.ui.open({ id: PANE, title: 'Goals', columns: 32, backgroundColor: 'transparent' })
+  on('command.run', { command: 'track' }, async ($, e) => {
+    await $.ui.open({ id: PANE, title: 'Waypoint', columns: 32, backgroundColor: 'transparent' })
     const cmd = parse(e.args)
-    // A command can't start a turn; the plugin's /goals:work skill does.
+    // A command can't start a turn; the plugin's /waypoint:work skill does.
     if (cmd.kind === 'work') {
       const what = cmd.items.flatMap(i => (i.subs ? i.subs.map(x => `${i.goal}.${x}`) : [String(i.goal)]))
-      return { text: `Run /goals:work ${what.join(' ')}${cmd.mode ? ` ${cmd.mode}` : ''} to start working on ${what.map(n => `#${n}`).join(', ')}.` }
+      return { text: `Run /waypoint:work ${what.join(' ')}${cmd.mode ? ` ${cmd.mode}` : ''} to start working on ${what.map(n => `#${n}`).join(', ')}.` }
     }
     return { text: await run($, o, cmd) }
   })
@@ -196,7 +196,7 @@ export const register: Register = (on, options) => {
     // Claude changed the tracker on its own: say so, with the way back for a focus switch.
     if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress'].includes(cmd.op.kind) && !result.startsWith('no ')) {
       const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
-      const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /goals focus ${prev} to undo` : ''
+      const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /track focus ${prev} to undo` : ''
       $.ui.toast(`Goals: ${result.split('\n').at(-1)}${undo}`)
     }
     return { result } as never
@@ -218,8 +218,8 @@ export const register: Register = (on, options) => {
     })
   })
 
-  // A summary draws as a framed log and post; any other /goals answer keeps the plain row.
-  on('ui.render', { component: 'CommandOutput', props: { command: 'goals' } }, async ($, e, next) => {
+  // A summary draws as a framed log and post; any other /track answer keeps the plain row.
+  on('ui.render', { component: 'CommandOutput', props: { command: 'track' } }, async ($, e, next) => {
     if (e.props.isErrored || !e.props.text.includes('\n\nPOST\n')) return next(e)
     return summaryTree($.ui.resolve(e) as never, e.props.text)
   })
