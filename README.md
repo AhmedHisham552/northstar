@@ -1,4 +1,10 @@
-# Waypoint
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/waypoint-mark-dark.svg">
+    <img src="assets/logo/waypoint-mark-light.svg" width="96" alt="Waypoint">
+  </picture>
+</p>
+<h1 align="center">Waypoint</h1>
 
 **A goals pane for Claude Code, driven by `/track`.** Keep the few things you want to get done beside the chat, see what you are working on *now*, tick sub-tasks as you go, and get your standup or weekly review written for you from what actually happened.
 
