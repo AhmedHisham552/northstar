@@ -16,13 +16,13 @@
 ──────────────────────────────
 Now                        2/4
 ◑ #3 Ship onboarding guide
-   ✓ 3.1 Outline
-   ✓ 3.2 First draft
-   ○ 3.3 Screenshots
-   ○ 3.4 Review
+  ✓ 3.1 Outline
+  ✓ 3.2 First draft
+  ○ 3.3 Screenshots
+  ○ 3.4 Review
 
 my-app
-○ #6 Fix flaky login test    0%
+○ #6 Fix flaky login test
 
 General
 ◕ #2 Prepare demo            3/4
@@ -47,10 +47,10 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 ## Features
 
 - **Side pane** that stays beside the chat, about 32 columns wide.
-- **Focus.** One goal is *NOW*: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view, faded.
+- **Focus.** One goal is **Now**: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view (`· ◎ Now ◑ #3 Ship onboarding guide 2/4`).
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
-- **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.2 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
-- **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`.
+- **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.3 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
+- **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`, with a count (`2/4`) beside goals that have sub-tasks and a percentage beside those that don't, once they have moved.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
@@ -69,7 +69,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track 3 60 "note"` | Set progress of a goal without sub-tasks |
 | `/track done 3` | Mark goal #3 done |
 | `/track rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
-| `/track focus 3` / `focus off` | Set or clear the NOW goal for that goal's label |
+| `/track focus 3` / `focus off` | Set or clear the Now goal for that goal's label |
 | `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
 | `/track tag 3 @label` | Move a goal to a label (`@general` to clear) |
 | `/track @label` | Open or close another label in the pane (or click its header) |
@@ -96,21 +96,24 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Standups and weekly reviews
 
-`/track yesterday` (the last *working* day):
+`/track yesterday` (the last *working* day) prints the log in a frame and the post in an orange one:
 
 ```
-Tue 17 Nov
-PLANNED     4 goals open, focus: Ship onboarding guide
-DONE        ◑ Ship onboarding guide  2/4
-              ✓ First draft
-            ✓ Fix flaky login test
-MOVED       ◔→◑ Prepare demo  1/4 → 2/4
-STILL OPEN  Migrate settings page
-
-POST
-Yesterday I finished the first draft of the onboarding guide and sent it
-for comments, and fixed the flaky login test. The demo is halfway there.
-Today I'll add screenshots to the guide.
+╭────────────────────────────────────────────────────────────────────╮
+│ Tue 17 Nov                                                         │
+│ PLANNED     4 goals open, focus: Ship onboarding guide             │
+│ DONE        ◑ Ship onboarding guide  2/4                           │
+│               ✓ First draft                                        │
+│             ✓ Fix flaky login test                                 │
+│ MOVED       ◔→◑ Prepare demo  1/4 → 2/4                            │
+│ STILL OPEN  Migrate settings page                                  │
+╰────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────╮
+│ POST                                                               │
+│ Yesterday I finished the first draft of the onboarding guide and   │
+│ sent it for comments, and fixed the flaky login test. The demo is  │
+│ halfway there. Today I'll add screenshots to the guide.            │
+╰────────────────────────────────────────────────────────────────────╯
 ```
 
 - **PLANNED:** goals open at the start of the period, and what was in focus.
@@ -129,7 +132,7 @@ Today I'll add screenshots to the guide.
 
   Plain files, so you can back them up, sync them or grep them. They survive reinstalling the plugin.
 - **Labels.** `@here` resolves to the folder name of the repo's main checkout (`git rev-parse --git-common-dir`), so worktrees share a label. Outside git it is the current folder's name.
-- **Focus.** One NOW goal per label. A session shows the focus of its repo's label, or General's when that label has none.
+- **Focus.** One Now goal per label. A session shows the focus of its repo's label, or General's when that label has none.
 - **Finished goals** stay in the pane, green, on the day they were finished, then leave it. They stay in the log, the summaries and `/track done-list`.
 - **Two sessions at once.** Each change re-reads the files before writing, so one session doesn't wipe another's goals. Every open pane picks up changes from other sessions within a few seconds. In the rare case two sessions write in the same instant, one log line can be lost.
 
