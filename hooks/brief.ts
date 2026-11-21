@@ -33,6 +33,7 @@ export function goalsBrief(v: Shown): string {
     '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
     '- When you begin a listed sub-task, call "start <n>.<m>" (it spins in the pane); "start <n>" for a goal without sub-tasks.',
     '- When your work finishes a listed sub-task, call "tick <n>.<m>"; when it finishes a goal without sub-tasks, call "done <n>".',
+    '- When you stop working on a started item without finishing it, call "stop <n>" or "stop <n>.<m>".',
     '- Do not invent goals; add one only when the user asks.',
   ].join('\n')
 }

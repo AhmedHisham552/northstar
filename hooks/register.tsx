@@ -3,6 +3,7 @@ import type { Register } from 'claude-code'
 
 import { applyOp, isActive, labelKey } from './model'
 import type { Goal, Op } from './model'
+import { idle, idleStops } from './idle'
 import { repoLabel } from './label'
 import { parse } from './parse'
 import type { Cmd } from './parse'
@@ -28,6 +29,18 @@ async function spinTick($: Engine) {
   const nowMs = await $.clock.now()
   const busy = Object.keys(v.state.active).some(k => isActive(v.state!, k, nowMs))
   if (busy) await update($, frame, f => ((f ?? 0) + 1) % SPINNER.length)
+}
+
+// Spinners started with /track start are the user's and are left alone; Claude's stop after a quiet minute.
+const IDLE_MS = 60_000
+const quiet = idle()
+
+async function sweepIdle($: Engine, o: Opts) {
+  if (!quiet.started.size) return
+  for (const k of idleStops(quiet, await $.clock.now(), IDLE_MS)) {
+    const [goal, sub] = k.split('.').map(Number)
+    await change($, o, sub ? { kind: 'stop', goal: goal!, sub } : { kind: 'stop', goal: goal! })
+  }
 }
 
 export const HELP = [
@@ -173,6 +186,21 @@ export const register: Register = (on, options) => {
     // ponytail: 4s mtime poll; a file watcher if the API ever offers one.
     $.clock.every(4000, () => void refresh($, o))
     $.clock.every(120, () => void spinTick($))
+    $.clock.every(5000, () => void sweepIdle($, o))
+    return next(e)
+  })
+
+  on('agent.spawn', async ($, e, next) => {
+    quiet.agents++
+    return next(e)
+  })
+  on('turn.start', async ($, e, next) => {
+    if (!e.agentId) quiet.mainBusy = true
+    return next(e)
+  })
+  on('turn.complete', async ($, e, next) => {
+    if (e.agentId) quiet.agents = Math.max(0, quiet.agents - 1)
+    else quiet.mainBusy = false
     return next(e)
   })
 
@@ -193,6 +221,8 @@ export const register: Register = (on, options) => {
     const cmd = parse(args.command ?? args.input?.command ?? '')
     const before = await read($, view)
     const result = await run($, o, cmd)
+    for (const op of cmd.kind === 'op' ? [cmd.op] : cmd.kind === 'ops' ? cmd.ops : [])
+      if (op.kind === 'start') quiet.started.add(op.sub ? `${op.goal}.${op.sub}` : String(op.goal))
     // Claude changed the tracker on its own: say so, with the way back for a focus switch.
     if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress'].includes(cmd.op.kind) && !result.startsWith('no ')) {
       const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
