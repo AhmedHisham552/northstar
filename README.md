@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-https://github.com/user-attachments/assets/f301686e-b5e9-415d-9e9a-2bc6abbffc21
+https://github.com/user-attachments/assets/3ad2d142-2b5f-48d3-9b5b-e4c7c79641e0
 
 ```
 ◎ Waypoint · Goals        0/4
