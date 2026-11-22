@@ -87,6 +87,12 @@ async function now($: Engine) {
   return new Date(await $.clock.now())
 }
 
+// Labels start open; a header click or `/track @label` collapses and reopens one.
+const toggled = (v: View, label: string): View => {
+  const c = v.collapsed ?? []
+  return { ...v, collapsed: c.includes(label) ? c.filter(x => x !== label) : [...c, label] }
+}
+
 async function change($: Engine, o: Opts, op: Op): Promise<string> {
   const io = engineIo($)
   const d = await dir($, o)
@@ -104,7 +110,7 @@ async function change($: Engine, o: Opts, op: Op): Promise<string> {
   if ('error' in r) return r.error
   await saveState(io, d, r.state)
   for (const e of r.events) await appendEvent(io, d, e)
-  await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), expanded: old?.expanded ?? null }))
+  await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), collapsed: old?.collapsed ?? [] }))
   if (target.kind === 'focus' && target.goal === null) return `Focus cleared for ${labelKey(target.label)}.`
   return r.events.map(e => `${e.type.replace('.', ' ')}: ${e.sub ? `${e.goal}.${e.sub}` : `#${e.goal}`} ${e.text}`).join('\n')
 }
@@ -129,7 +135,7 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
       return out.join('\n')
     }
     case 'show':
-      await update($, view, v => (v ? { ...v, expanded: v.expanded === cmd.label ? null : cmd.label } : v))
+      await update($, view, v => (v ? toggled(v, cmd.label) : v))
       return `Toggled @${cmd.label} in the pane.`
     case 'doneList': {
       const s = await loadState(engineIo($), await dir($, o))
@@ -171,7 +177,7 @@ export const register: Register = (on, options) => {
     await migrate(io, d, at)
     const label = await repoLabel((argv, init) => $.process.run(argv, init), e.cwd)
     const state = await loadState(io, d)
-    await update($, view, () => ({ state, label, today: at.slice(0, 10), expanded: null }))
+    await update($, view, () => ({ state, label, today: at.slice(0, 10), collapsed: [] }))
     await $.command.register({ name: 'track', description: 'Waypoint goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
     await $.tool.register({
       name: 'update_goals',
@@ -244,7 +250,7 @@ export const register: Register = (on, options) => {
       spin: key => (busy && isActive(state, key, nowMs) ? SPINNER[f % SPINNER.length]! : null),
       focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
-      toggle: label => void update($, view, x => (x ? { ...x, expanded: x.expanded === label ? null : label } : x)),
+      toggle: label => void update($, view, x => (x ? toggled(x, label) : x)),
     })
   })
 

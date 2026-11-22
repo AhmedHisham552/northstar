@@ -9,9 +9,10 @@ export type Goal = {
   nextSub: number
   subs: Sub[]
 }
+// names: label key → the label as first typed, for display ('getpaid' → 'GetPaid').
 // active: work in progress, key '3' (goal) or '3.2' (sub-task) → when it started.
-export type State = { version: 2; nextId: number; focus: Record<string, number>; goals: Goal[]; active?: Record<string, string> }
-export type View = { state: State | null; label: string; today: string; expanded: string | null }
+export type State = { version: 2; nextId: number; focus: Record<string, number>; goals: Goal[]; active?: Record<string, string>; names?: Record<string, string> }
+export type View = { state: State | null; label: string; today: string; collapsed?: string[] }
 
 declare module 'claude-code' {
   interface PluginState {

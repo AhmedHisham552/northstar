@@ -21,7 +21,7 @@ const state = build([
   { kind: 'done', goal: 2 },
   { kind: 'focus', goal: 1, label: null },
 ])
-const view = { state, label: 'shop', today: '2026-11-18', expanded: null }
+const view = { state, label: 'shop', today: '2026-11-18', collapsed: [] }
 
 test('the brief lists open goals with sub-tasks and tells Claude when to update', () => {
   const b = goalsBrief(view)

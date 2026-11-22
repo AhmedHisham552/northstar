@@ -16,7 +16,7 @@ export type WorkItem = { goal: number; subs?: number[] }
 const HELP: Cmd = { kind: 'help' }
 const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))
 // '@general' → null (General); '@here' kept for register to resolve to the session's repo label.
-const toLabel = (t: string) => (t.slice(1).toLowerCase() === 'general' ? null : t === '@here' ? '@here' : t.slice(1).toLowerCase())
+const toLabel = (t: string) => (t.slice(1).toLowerCase() === 'general' ? null : t === '@here' ? '@here' : t.slice(1))
 const split = (t: string) => t.split(';').map(x => x.trim()).filter(Boolean)
 const goalNo = (t = '') => (/^#?\d+$/.test(t) ? Number(t.replace('#', '')) : NaN)
 
