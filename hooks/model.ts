@@ -30,6 +30,7 @@ type Result = { state: State; events: Event[] } | { error: string }
 export const emptyState = (): State => ({ version: 2, nextId: 1, focus: {}, goals: [] })
 
 export const labelKey = (label: string | null) => label ?? 'general'
+export const labelName = (s: State, label: string | null) => (label === null ? 'General' : s.names?.[label] ?? label)
 
 export function progressOf(g: Goal): number {
   if (g.doneAt) return 100
@@ -64,6 +65,12 @@ const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)))
 
 export function applyOp(input: State, op: Op, at: string): Result {
   const s: State = structuredClone(input)
+  // Labels match case-insensitively; the first casing typed is kept for display.
+  if ((op.kind === 'add' || op.kind === 'tag') && op.label) {
+    const key = op.label.toLowerCase()
+    if (op.label !== key && !s.names?.[key]) s.names = { ...s.names, [key]: op.label }
+    op = { ...op, label: key }
+  }
   const events: Event[] = []
   const log = (g: Goal, type: string, extra: Partial<Event> = {}) =>
     events.push({ at, type, goal: g.id, label: g.label, text: g.text, ...extra })

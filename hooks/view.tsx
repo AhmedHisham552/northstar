@@ -1,5 +1,5 @@
 import { focused } from './brief'
-import { glyph, progressOf, visibleGoals } from './model'
+import { glyph, labelName, progressOf, visibleGoals } from './model'
 import type { Goal, State, View } from '../types'
 
 export type { View }
@@ -71,9 +71,9 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const groups: [string, Goal[]][] = []
   const here = rest.filter(g => g.label === v.label)
   const general = rest.filter(g => g.label === null)
-  if (here.length) groups.push([v.label, here])
+  if (here.length) groups.push([labelName(v.state, v.label), here])
   if (general.length) groups.push(['General', general])
-  // Other repos' labels: a header to open and close, with their goals only while open.
+  // Other repos' labels: open by default, each header collapses and reopens it.
   const others = new Map<string, Goal[]>()
   for (const g of rest) if (g.label !== null && g.label !== v.label) others.set(g.label, [...(others.get(g.label) ?? []), g])
 
@@ -106,16 +106,16 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
         </Box>
       ))}
       {[...others].map(([label, list]) =>
-        v.expanded === label ? (
+        !(v.collapsed ?? []).includes(label) ? (
           <Box flexDirection="column" marginBottom={1}>
             <Button key={`l${label}`} plain onPress={() => act.toggle(label)}>
-              <Text color={ACCENT}>{`▾ ${label}`}</Text>
+              <Text color={ACCENT}>{`▾ ${labelName(v.state, label)}`}</Text>
             </Button>
             {list.map(g => goalRow(ui, g, width, act))}
           </Box>
         ) : (
           <Button key={`l${label}`} plain onPress={() => act.toggle(label)}>
-            <Text color={ACCENT}>{fit(`▸ ${label}`, width - String(list.length).length - 1).padEnd(width - String(list.length).length)}</Text>
+            <Text color={ACCENT}>{fit(`▸ ${labelName(v.state, label)}`, width - String(list.length).length - 1).padEnd(width - String(list.length).length)}</Text>
             <Text color="subtle">{String(list.length)}</Text>
           </Button>
         ),

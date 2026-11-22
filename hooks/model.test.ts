@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { applyOp, emptyState, glyph, isActive, labelKey, progressOf, visibleGoals } from './model'
+import { applyOp, emptyState, glyph, isActive, labelKey, labelName, progressOf, visibleGoals } from './model'
 import type { State } from './model'
 
 const AT = '2026-11-18T10:00:00.000Z'
@@ -123,4 +123,14 @@ test('isActive ignores marks older than 8 hours', () => {
   const s = ok(applyOp(seeded(), { kind: 'start', goal: 1 }, '2026-11-18T01:00:00.000Z')).state
   expect(isActive(s, '1', Date.parse('2026-11-18T08:59:00.000Z'))).toBe(true)
   expect(isActive(s, '1', Date.parse('2026-11-18T09:01:00.000Z'))).toBe(false)
+})
+
+test('labels match case-insensitively and keep the first casing for display', () => {
+  const a = applyOp(emptyState(), { kind: 'add', texts: ['A'], label: 'GetPaid' }, '2026-11-22T10:00:00')
+  if ('error' in a) throw new Error(a.error)
+  const b = applyOp(a.state, { kind: 'add', texts: ['B'], label: 'getpaid' }, '2026-11-22T10:01:00')
+  if ('error' in b) throw new Error(b.error)
+  expect(b.state.goals.map(g => g.label)).toEqual(['getpaid', 'getpaid'])
+  expect(labelName(b.state, 'getpaid')).toBe('GetPaid')
+  expect(labelName(b.state, null)).toBe('General')
 })

@@ -26,7 +26,7 @@ const state = build([
   { kind: 'tick', goal: 1, sub: 1 },
   { kind: 'focus', goal: 1, label: null },
 ])
-const view = (s: State) => ({ value: { value: { state: s, label: 'shop', today: DAY, expanded: null }, version: 1 } })
+const view = (s: State) => ({ value: { value: { state: s, label: 'shop', today: DAY, collapsed: [] }, version: 1 } })
 
 const PANE = (surface: 'terminal' | 'desktop') =>
   ({
@@ -45,7 +45,7 @@ const button = async (ui: { find: (q: object) => Promise<Found | undefined> }, k
   return b?.label ?? b?.props?.label ?? b?.text
 }
 
-test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names', async ($, on) => {
+test('pane shows NOW with sub-tasks, groups, other labels open and cuts long names', async ($, on) => {
   on('state.get', () => view(state))
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
@@ -58,7 +58,7 @@ test('pane shows NOW with sub-tasks, groups, folded labels and cuts long names',
     expect(await button(ui, 's1.1')).toContain('✓ 1.1 Read docs')
     expect(await texts(ui, /^shop$/)).toBe('shop')
     expect(await texts(ui, /^General$/)).toBe('General')
-    expect(await button(ui, 'lother')).toMatch(/^▸ other +1$/)
+    expect(await button(ui, 'lother')).toBe('▾ other')
     const long = (await button(ui, 'g5'))!
     expect(long.length).toBeLessThanOrEqual(32)
     expect(long).toMatch(/…$/)
@@ -168,11 +168,19 @@ test('Claude gets the goals with each prompt, and the hint line gets the NOW tai
   await ui.unmount()
 })
 
-test('another label opens and closes from its header', async ($, on) => {
-  on('state.get', () => ({ value: { value: { state, label: 'shop', today: DAY, expanded: 'other' }, version: 1 } }))
+test('another label is open by default', async ($, on) => {
+  on('state.get', () => ({ value: { value: { state, label: 'shop', today: DAY, collapsed: [] }, version: 1 } }))
   const ui = await $.ui.mount(PANE('terminal'))
   expect(await button(ui, 'lother')).toBe('▾ other')
   expect(await button(ui, 'g4')).toBe('○ #4 Other repo work')
+  await ui.unmount()
+})
+
+test('a collapsed label shows only its header', async ($, on) => {
+  on('state.get', () => ({ value: { value: { state, label: 'shop', today: DAY, collapsed: ['other'] }, version: 1 } }))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect((await button(ui, 'lother'))?.startsWith('▸ other')).toBe(true)
+  expect(await button(ui, 'g4')).toBeUndefined()
   await ui.unmount()
 })
 
