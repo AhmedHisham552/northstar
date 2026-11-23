@@ -134,3 +134,15 @@ test('labels match case-insensitively and keep the first casing for display', ()
   expect(labelName(b.state, 'getpaid')).toBe('GetPaid')
   expect(labelName(b.state, null)).toBe('General')
 })
+
+test('rename a goal keeps its sub-tasks and details; rename a sub-task', () => {
+  let s = ok(applyOp(emptyState(), { kind: 'add', texts: ['Old'], details: ['the long text'], label: null }, AT)).state
+  s = ok(applyOp(s, { kind: 'sub', goal: 1, texts: ['x'] }, AT)).state
+  const r = ok(applyOp(s, { kind: 'rename', goal: 1, text: 'New' }, AT))
+  expect(r.state.goals[0]).toMatchObject({ id: 1, text: 'New', detail: 'the long text', subs: [{ text: 'x' }] })
+  expect(r.events[0]).toMatchObject({ type: 'goal.rename', text: 'New' })
+  const sub = ok(applyOp(r.state, { kind: 'rename', goal: 1, sub: 1, text: 'y' }, AT))
+  expect(sub.state.goals[0]!.subs[0]!.text).toBe('y')
+  expect(sub.events[0]).toMatchObject({ type: 'sub.rename', sub: 1, text: 'y' })
+  expect(applyOp(r.state, { kind: 'rename', goal: 1, sub: 9, text: 'z' }, AT)).toEqual({ error: 'no sub-task 1.9' })
+})

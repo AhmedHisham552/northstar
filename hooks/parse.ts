@@ -90,8 +90,21 @@ export function parse(args: string): Cmd {
     }
     case 'focus':
       return a === 'off' ? op({ kind: 'focus', goal: null, label: '@here' }) : n ? op({ kind: 'focus', goal: n, label: null }) : HELP
+    case 'rename': {
+      // The new name is read from the raw line, so quotes in it are kept.
+      const text = args.trim().split(/\s+/).slice(2).join(' ')
+      if (!text) return HELP
+      return dotted ? op({ kind: 'rename', goal: Number(dotted[1]), sub: Number(dotted[2]), text }) : n ? op({ kind: 'rename', goal: n, text }) : HELP
+    }
     case 'tag':
-      return n && b.startsWith('@') ? op({ kind: 'tag', goal: n, label: toLabel(b) }) : HELP
+    case 'move': {
+      // `move 3 @work`, `move 3, 5 @work`, `move [3,5] @general`.
+      const to = words.at(-1) ?? ''
+      const ids = words.slice(1, -1).join(' ').split(/[\s,[\]]+/).filter(Boolean).map(goalNo)
+      if (!to.startsWith('@') || !ids.length || ids.some(x => !x)) return HELP
+      const ops: Op[] = ids.map(goal => ({ kind: 'tag', goal, label: toLabel(to) }))
+      return ops.length === 1 ? op(ops[0]!) : { kind: 'ops', ops }
+    }
   }
   if (!Number.isNaN(goalNo(cmd)) && words.length === 2 && /^\d+$/.test(a)) {
     return op(withNote({ kind: 'progress', goal: goalNo(cmd), value: Number(a) }))

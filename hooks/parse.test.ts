@@ -87,3 +87,13 @@ test('add keeps quotes, and a long text with ; stays one goal', () => {
   const para = 'Make the track command smarter when a goal is long and wordy; rephrase it simply and keep the rest as details for the agents to work through'
   expect(op(`add @here ${para}`)).toEqual({ kind: 'add', texts: [para], label: '@here' })
 })
+
+test('rename and move', () => {
+  expect(op('rename 3 Fix the "Save" button')).toEqual({ kind: 'rename', goal: 3, text: 'Fix the "Save" button' })
+  expect(op('rename 3.2 Draft')).toEqual({ kind: 'rename', goal: 3, sub: 2, text: 'Draft' })
+  expect(parse('rename 3')).toEqual({ kind: 'help' })
+  expect(op('move 2 @Work')).toEqual({ kind: 'tag', goal: 2, label: 'Work' })
+  expect(parse('move 2, 5 @general')).toEqual({ kind: 'ops', ops: [{ kind: 'tag', goal: 2, label: null }, { kind: 'tag', goal: 5, label: null }] })
+  expect(parse('move [2,5] @here')).toEqual({ kind: 'ops', ops: [{ kind: 'tag', goal: 2, label: '@here' }, { kind: 'tag', goal: 5, label: '@here' }] })
+  expect(parse('move 2')).toEqual({ kind: 'help' })
+})

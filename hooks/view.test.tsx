@@ -154,6 +154,10 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run(`add ${para}`)
   expect(prompts.at(-1)).toContain('Rewrite this goal')
   expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Today I ticked Read docs', detail: para })
+  const id = JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1).id
+  await run(`rename ${id} Smarter track add`)
+  await run(`move ${id} @here`)
+  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Smarter track add', detail: para, label: 'shop' })
 })
 
 test('the NOW goal shows its details faded under the title', async ($, on) => {

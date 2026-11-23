@@ -68,6 +68,7 @@ function replay(events: Event[]) {
       case 'sub.add': g.subs.set(e.sub!, { text: e.text, done: false }); break
       case 'sub.done': case 'sub.undone': { const s = g.subs.get(e.sub!); if (s) s.done = e.type === 'sub.done'; break }
       case 'sub.remove': g.subs.delete(e.sub!); break
+      case 'sub.rename': { const s = g.subs.get(e.sub!); if (s) s.text = e.text; break }
     }
   }
   return { goals, focus }

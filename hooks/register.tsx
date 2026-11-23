@@ -52,7 +52,8 @@ export const HELP = [
   '/track rm <n>[, <n>.<m> …]       remove goals and/or sub-tasks',
   '/track focus <n> | focus off     set or clear the NOW goal',
   '/track start <n|n.m> … | stop    mark work in progress (spins in the pane)',
-  '/track tag <n> @label|@general   move a goal to a label',
+  '/track rename <n|n.m> <name>     rename a goal or sub-task',
+  '/track move <n>[, <n> …] @label  move goals to a label (@general, @here)',
   '/track @label                    open / close a label in the pane',
   '/track yesterday | today | week  summary with a ready-to-post update',
   '/track from YYYY-MM-DD to YYYY-MM-DD',
@@ -94,7 +95,13 @@ const toggled = (v: View, label: string): View => {
 }
 
 // A long goal gets a short title from the model; the full text stays as its detail.
+async function shorten($: Engine, t: string): Promise<string> {
+  const r = await $.model.complete({ model: MODEL, prompt: titlePrompt(t), maxTokens: 40 }).catch(() => null)
+  return shortTitle(r?.isAnswered ? r.text : null, t)
+}
+
 async function titled($: Engine, op: Op): Promise<Op> {
+  if (op.kind === 'rename' && op.sub === undefined && op.text.length > TITLE_MAX) return { ...op, text: await shorten($, op.text), detail: op.text }
   if (op.kind !== 'add' || op.texts.every(t => t.length <= TITLE_MAX)) return op
   const texts: string[] = []
   const details: (string | undefined)[] = []
@@ -104,8 +111,7 @@ async function titled($: Engine, op: Op): Promise<Op> {
       details.push(undefined)
       continue
     }
-    const r = await $.model.complete({ model: MODEL, prompt: titlePrompt(t), maxTokens: 40 }).catch(() => null)
-    texts.push(shortTitle(r?.isAnswered ? r.text : null, t))
+    texts.push(await shorten($, t))
     details.push(t)
   }
   return { ...op, texts, details }
@@ -202,7 +208,7 @@ export const register: Register = (on, options) => {
       name: 'update_goals',
       description:
         "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
-        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
         'A goal name over ' + TITLE_MAX + ' characters gets a short title, with the full text kept as its details. ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,

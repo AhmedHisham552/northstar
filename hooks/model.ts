@@ -22,6 +22,7 @@ export type Op =
   | { kind: 'rm'; goal: number; sub?: number }
   | { kind: 'focus'; goal: number | null; label: string | null }
   | { kind: 'tag'; goal: number; label: string | null }
+  | { kind: 'rename'; goal: number; sub?: number; text: string; detail?: string }
   | { kind: 'start'; goal: number; sub?: number }
   | { kind: 'stop'; goal?: number; sub?: number }
 
@@ -170,6 +171,19 @@ export function applyOp(input: State, op: Op, at: string): Result {
       const key = op.sub === undefined ? String(g.id) : `${g.id}.${op.sub}`
       if (op.kind === 'stop') unmark(s, key)
       else if (!s.active?.[key]) s.active = { ...s.active, [key]: at }
+      break
+    }
+    case 'rename': {
+      if (op.sub === undefined) {
+        g.text = op.text
+        if (op.detail) g.detail = op.detail // a short new title keeps the old details
+        log(g, 'goal.rename')
+        break
+      }
+      const sub = g.subs.find(x => x.id === op.sub)
+      if (!sub) return { error: `no sub-task ${g.id}.${op.sub}` }
+      sub.text = op.text
+      log(g, 'sub.rename', { sub: sub.id, text: sub.text })
       break
     }
     case 'tag': {

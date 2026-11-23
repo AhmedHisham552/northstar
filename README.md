@@ -74,7 +74,8 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
 | `/track focus 3` / `focus off` | Set or clear the Now goal for that goal's label |
 | `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
-| `/track tag 3 @label` | Move a goal to a label (`@general` to clear) |
+| `/track rename 3 New name` | Rename a goal (`3.2` for a sub-task); its sub-tasks and details stay |
+| `/track move 3, 5 @label` | Move goals to a label (`@general` to clear, `@here` for this repo); `tag` still works |
 | `/track @label` | Open or close another label in the pane (or click its header) |
 | `/track yesterday` / `today` / `week` | Summary for that period |
 | `/track from 2026-11-01 to 2026-11-15` | Summary for any date range |
