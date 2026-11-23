@@ -38,10 +38,23 @@ function parts(ui: Els, p: Parts, width: number) {
   ]
 }
 
+// Sub-tasks under a goal, each one a click to tick or untick.
+function subRows(ui: Els, g: Goal, width: number, act: Act) {
+  return g.subs.map(s => {
+    const spin = s.done ? null : act.spin(`${g.id}.${s.id}`)
+    return (
+      <ui.Button key={`s${g.id}.${s.id}`} plain onPress={() => act.tick(g.id, s.id, !s.done)}>
+        {parts(ui, { indent: '  ', mark: s.done ? '✓' : spin ?? '○', num: `${g.id}.${s.id}`, text: s.text, right: '', done: s.done, busy: !!spin }, width)}
+      </ui.Button>
+    )
+  })
+}
+
 function goalRow(ui: Els, g: Goal, width: number, act: Act) {
   const mark = goalMark(g, act)
   const row = parts(ui, { mark, num: `#${g.id}`, text: g.text, right: amount(g), done: !!g.doneAt, busy: !g.doneAt && mark !== glyph(progressOf(g)) }, width)
-  return g.doneAt ? <ui.Text>{row}</ui.Text> : <ui.Button key={`g${g.id}`} plain onPress={() => act.focus(g.id)}>{row}</ui.Button>
+  const head = g.doneAt ? <ui.Text>{row}</ui.Text> : <ui.Button key={`g${g.id}`} plain onPress={() => act.focus(g.id)}>{row}</ui.Button>
+  return g.doneAt || !g.subs.length ? head : <ui.Box flexDirection="column">{head}{subRows(ui, g, width, act)}</ui.Box>
 }
 
 export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
@@ -90,14 +103,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
             <Text color={now.doneAt ? 'success' : ACCENT}>{goalMark(now, act)}</Text> <Text color="subtle">{`#${now.id}`}</Text> {now.text}
           </Text>
           {now.detail && <Text dimColor wrap="wrap">{fit(now.detail, width * 4)}</Text>}
-          {now.subs.map(s => {
-            const spin = s.done ? null : act.spin(`${now.id}.${s.id}`)
-            return (
-              <Button key={`s${now.id}.${s.id}`} plain onPress={() => act.tick(now.id, s.id, !s.done)}>
-                {parts(ui, { indent: '  ', mark: s.done ? '✓' : spin ?? '○', num: `${now.id}.${s.id}`, text: s.text, right: '', done: s.done, busy: !!spin }, width)}
-              </Button>
-            )
-          })}
+          {subRows(ui, now, width, act)}
         </Box>
       )}
       {groups.map(([name, list]) => (

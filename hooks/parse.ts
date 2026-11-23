@@ -89,7 +89,7 @@ export function parse(args: string): Cmd {
       return ops.length === 1 ? op(ops[0]!) : ops.length ? { kind: 'ops', ops } : HELP
     }
     case 'focus':
-      return a === 'off' ? op({ kind: 'focus', goal: null, label: '@here' }) : n ? op({ kind: 'focus', goal: n, label: null }) : HELP
+      return a === 'off' ? op({ kind: 'focus', goal: null, label: '@here' }) : n ? op({ kind: 'focus', goal: n, label: '@here' }) : HELP
     case 'rename': {
       // The new name is read from the raw line, so quotes in it are kept.
       const text = args.trim().split(/\s+/).slice(2).join(' ')

@@ -146,3 +146,9 @@ test('rename a goal keeps its sub-tasks and details; rename a sub-task', () => {
   expect(sub.events[0]).toMatchObject({ type: 'sub.rename', sub: 1, text: 'y' })
   expect(applyOp(r.state, { kind: 'rename', goal: 1, sub: 9, text: 'z' }, AT)).toEqual({ error: 'no sub-task 1.9' })
 })
+
+test('a goal from another label becomes Now under the label it was focused from', () => {
+  let s = ok(applyOp(emptyState(), { kind: 'add', texts: ['A'], label: 'initiatives' }, AT)).state
+  s = ok(applyOp(s, { kind: 'focus', goal: 1, label: 'qoyod' }, AT)).state
+  expect(s.focus).toEqual({ qoyod: 1 })
+})

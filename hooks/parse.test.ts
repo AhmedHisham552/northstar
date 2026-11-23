@@ -29,7 +29,7 @@ test('sub, tick, progress, done, rm with notes', () => {
 })
 
 test('focus and tag', () => {
-  expect(op('focus 2')).toEqual({ kind: 'focus', goal: 2, label: null })
+  expect(op('focus 2')).toEqual({ kind: 'focus', goal: 2, label: '@here' })
   expect(op('focus off')).toEqual({ kind: 'focus', goal: null, label: '@here' })
   expect(op('tag 2 @work')).toEqual({ kind: 'tag', goal: 2, label: 'work' })
   expect(op('tag 2 @general')).toEqual({ kind: 'tag', goal: 2, label: null })

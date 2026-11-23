@@ -160,11 +160,14 @@ export function applyOp(input: State, op: Op, at: string): Result {
         log(g, 'sub.remove', { sub: sub.id, text: sub.text })
       }
       break
-    case 'focus':
-      if (s.focus[labelKey(g.label)] === g.id) break // already NOW: nothing to log
-      s.focus[labelKey(g.label)] = g.id
+    case 'focus': {
+      // Now belongs to the session's label (passed in), so a goal from any label can be Now here.
+      const key = op.label ?? labelKey(g.label)
+      if (s.focus[key] === g.id) break // already NOW: nothing to log
+      s.focus[key] = g.id
       log(g, 'goal.focus')
       break
+    }
     case 'start':
     case 'stop': {
       if (op.sub !== undefined && !g.subs.some(x => x.id === op.sub)) return { error: `no sub-task ${g.id}.${op.sub}` }

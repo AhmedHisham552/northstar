@@ -224,3 +224,17 @@ test('a summary draws framed with accent keys and a post', async ($, on) => {
   expect(await texts(ui, /^Drafted the docs\.$/)).toBe('Drafted the docs.')
   await ui.unmount()
 })
+
+test('sub-tasks show under every goal, not only Now', async ($, on) => {
+  const s = build([
+    { kind: 'add', texts: ['Cash forecasting'], label: 'initiatives' },
+    { kind: 'sub', goal: 1, texts: ['Proposal', 'Align'] },
+    { kind: 'tick', goal: 1, sub: 1 },
+  ])
+  on('state.get', () => view(s))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await texts(ui, /^Now$/)).toBeUndefined()
+  expect(await button(ui, 's1.1')).toContain('✓ 1.1 Proposal')
+  expect(await button(ui, 's1.2')).toContain('○ 1.2 Align')
+  await ui.unmount()
+})

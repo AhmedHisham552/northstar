@@ -181,7 +181,7 @@ async function run($: Engine, o: Opts, cmd: Cmd): Promise<string> {
         if (bad !== undefined) return `no sub-task ${goal.id}.${bad}`
         items.push(it.subs ? { goal, subs: it.subs } : { goal })
       }
-      await change($, o, { kind: 'focus', goal: cmd.items[0]!.goal, label: null })
+      await change($, o, { kind: 'focus', goal: cmd.items[0]!.goal, label: '@here' })
       return workPrompt(items, cmd.mode ?? o.dispatch)
     }
   }
@@ -274,7 +274,7 @@ export const register: Register = (on, options) => {
     const f = busy ? ((await read($, frame)) ?? 0) : 0
     return paneTree(ui as never, { ...v, state }, e.props.bodyColumns, {
       spin: key => (busy && isActive(state, key, nowMs) ? SPINNER[f % SPINNER.length]! : null),
-      focus: goal => void change($, o, { kind: 'focus', goal, label: null }),
+      focus: goal => void change($, o, { kind: 'focus', goal, label: '@here' }),
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
       toggle: label => void update($, view, x => (x ? toggled(x, label) : x)),
     })
