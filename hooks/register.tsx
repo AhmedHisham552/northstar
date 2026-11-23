@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import { applyOp, isActive, labelKey } from './model'
+import { TITLE_MAX, applyOp, isActive, labelKey } from './model'
 import type { Goal, Op } from './model'
 import { idle, idleStops } from './idle'
 import { repoLabel } from './label'
@@ -11,7 +11,7 @@ import { appendEvent, dataDir, engineIo, loadState, migrate, readEvents, saveSta
 import type { Engine } from './store'
 import { dayRange, localDay, localIso, periodRange, postPrompt, summarize } from './summary'
 import type { WorkWeek } from './summary'
-import { goalsBrief, hintTail, workPrompt } from './brief'
+import { goalsBrief, hintTail, shortTitle, titlePrompt, workPrompt } from './brief'
 import { paneTree, summaryTree } from './view'
 import type { View } from './view'
 
@@ -93,7 +93,26 @@ const toggled = (v: View, label: string): View => {
   return { ...v, collapsed: c.includes(label) ? c.filter(x => x !== label) : [...c, label] }
 }
 
-async function change($: Engine, o: Opts, op: Op): Promise<string> {
+// A long goal gets a short title from the model; the full text stays as its detail.
+async function titled($: Engine, op: Op): Promise<Op> {
+  if (op.kind !== 'add' || op.texts.every(t => t.length <= TITLE_MAX)) return op
+  const texts: string[] = []
+  const details: (string | undefined)[] = []
+  for (const t of op.texts) {
+    if (t.length <= TITLE_MAX) {
+      texts.push(t)
+      details.push(undefined)
+      continue
+    }
+    const r = await $.model.complete({ model: MODEL, prompt: titlePrompt(t), maxTokens: 40 }).catch(() => null)
+    texts.push(shortTitle(r?.isAnswered ? r.text : null, t))
+    details.push(t)
+  }
+  return { ...op, texts, details }
+}
+
+async function change($: Engine, o: Opts, input: Op): Promise<string> {
+  const op = await titled($, input)
   const io = engineIo($)
   const d = await dir($, o)
   const v = await read($, view)
@@ -184,6 +203,7 @@ export const register: Register = (on, options) => {
       description:
         "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
         '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        'A goal name over ' + TITLE_MAX + ' characters gets a short title, with the full text kept as its details. ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
       inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },

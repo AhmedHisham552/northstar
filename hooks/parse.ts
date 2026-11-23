@@ -1,3 +1,4 @@
+import { TITLE_MAX } from './model'
 import type { Op } from './model'
 
 export type Cmd =
@@ -95,8 +96,11 @@ export function parse(args: string): Cmd {
   if (!Number.isNaN(goalNo(cmd)) && words.length === 2 && /^\d+$/.test(a)) {
     return op(withNote({ kind: 'progress', goal: goalNo(cmd), value: Number(a) }))
   }
-  const rest = cmd === 'add' ? words.slice(1) : words
+  // Goals keep their quotes; `;` splits only a list of short names, so a pasted paragraph stays one goal.
+  const rest = (cmd === 'add' ? args.trim().slice(3) : args).trim().split(/\s+/).filter(Boolean)
   const label = rest[0]?.startsWith('@') ? toLabel(rest.shift()!) : null
-  const texts = split(rest.join(' '))
-  return texts.length ? op({ kind: 'add', texts, label }) : HELP
+  const body = rest.join(' ')
+  const parts = split(body)
+  const texts = parts.every(t => t.length <= TITLE_MAX) ? parts : [body]
+  return parts.length ? op({ kind: 'add', texts, label }) : HELP
 }

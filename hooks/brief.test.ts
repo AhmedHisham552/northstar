@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { goalsBrief, hintTail, workPrompt } from './brief'
+import { goalsBrief, hintTail, shortTitle, workPrompt } from './brief'
 import { applyOp, emptyState } from './model'
 import type { Op, State } from './model'
 
@@ -57,4 +57,17 @@ test('work on chosen sub-tasks only, dispatched as workflows', () => {
   expect(p).toContain('only these sub-tasks')
   expect(p).toContain('Workflow tool')
   expect(p).not.toContain('one background agent per goal')
+})
+
+test('a long goal gets the model title, else its first sentence cut to fit', () => {
+  const long = 'Improve the pane. It should show details faded under the title so agents know the goal in full and so do I.'
+  expect(shortTitle('"Show goal details in the pane."', long)).toBe('Show goal details in the pane')
+  expect(shortTitle(null, long)).toBe('Improve the pane.')
+  expect(shortTitle('', 'x'.repeat(80))).toBe(`${'x'.repeat(59)}…`)
+})
+
+test('details reach Claude and dispatched agents', () => {
+  const s = build([{ kind: 'add', texts: ['Smarter track add'], details: ['the whole paragraph'], label: null }, { kind: 'focus', goal: 1, label: null }])
+  expect(goalsBrief({ state: s, label: 'shop', today: '2026-11-18', collapsed: [] })).toContain('#1 Smarter track add [general] (NOW)\n  details: the whole paragraph')
+  expect(workPrompt([{ goal: s.goals[0]! }], 'agents')).toContain('#1 Smarter track add\n  details (as I wrote it): the whole paragraph')
 })

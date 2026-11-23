@@ -89,6 +89,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
           <Text bold wrap="wrap">
             <Text color={now.doneAt ? 'success' : ACCENT}>{goalMark(now, act)}</Text> <Text color="subtle">{`#${now.id}`}</Text> {now.text}
           </Text>
+          {now.detail && <Text dimColor wrap="wrap">{fit(now.detail, width * 4)}</Text>}
           {now.subs.map(s => {
             const spin = s.done ? null : act.spin(`${now.id}.${s.id}`)
             return (

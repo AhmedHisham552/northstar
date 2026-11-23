@@ -52,6 +52,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Focus.** One goal is **Now**: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view (`· ◎ Now ◑ #3 Ship onboarding guide 2/4`).
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.3 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
+- **Long goals get a short title.** Paste a paragraph into `/track add` and Haiku turns it into a short title. The full text is kept as the goal's details, shown faded under the Now goal and handed word for word to Claude and the agents `/waypoint:work` dispatches. A `;` splits goals only when every part is short (60 characters or fewer), so a pasted paragraph stays one goal.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`, with a count (`2/4`) beside goals that have sub-tasks and a percentage beside those that don't, once they have moved.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.

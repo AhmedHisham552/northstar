@@ -1,4 +1,4 @@
-import { glyph, labelKey, progressOf } from './model'
+import { TITLE_MAX, glyph, labelKey, progressOf } from './model'
 import type { Goal } from './model'
 import type { View } from '../types'
 
@@ -17,12 +17,27 @@ export function hintTail(v: Shown): string {
   return g ? `◎ Now ${glyph(progressOf(g))} #${g.id} ${g.text}${amount(g) ? ` ${amount(g)}` : ''}` : ''
 }
 
+export const titlePrompt = (text: string) =>
+  'Rewrite this goal as a short title in plain words: start with a verb, at most 7 words and ' +
+  `${TITLE_MAX - 10} characters. Keep names, ticket ids and numbers exactly. Reply with the title only.\n\nGoal:\n${text}`
+
+// The model's title, or the first sentence cut to fit when the model fails or rambles.
+export function shortTitle(answer: string | null, text: string): string {
+  const t = (answer ?? '').split('\n')[0]!.trim().replace(/^["'“]+|["'”.]+$/g, '').trim()
+  if (t && t.length <= TITLE_MAX) return t
+  const first = text.split(/(?<=[.!?])\s/)[0]!.trim()
+  return first.length <= TITLE_MAX ? first : `${first.slice(0, TITLE_MAX - 1).trimEnd()}…`
+}
+
+const cut = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1)}…`)
+
 // Added to Claude's instructions each turn so it can keep the tracker current.
 export function goalsBrief(v: Shown): string {
   const now = focused(v)
   const open = v.state.goals.filter(g => !g.doneAt)
   const lines = open.flatMap(g => [
     `#${g.id} ${g.text} [${labelKey(g.label)}]${g === now ? ' (NOW)' : ''}${amount(g) ? ` ${amount(g)}` : ''}`,
+    ...(g.detail ? [`  details: ${g === now ? g.detail : cut(g.detail, 200)}`] : []),
     ...g.subs.map(s => `  ${g.id}.${s.id} [${s.done ? 'x' : ' '}] ${s.text}`),
   ])
   return [
@@ -43,6 +58,7 @@ export type Dispatch = 'agents' | 'workflow'
 export function workPrompt(items: { goal: Goal; subs?: number[] }[], dispatch: Dispatch): string {
   const list = items.flatMap(({ goal: g, subs }) => [
     `#${g.id} ${g.text}${subs ? ' (only these sub-tasks)' : ''}`,
+    ...(g.detail ? [`  details (as I wrote it): ${g.detail}`] : []),
     ...g.subs.filter(s => !subs || subs.includes(s.id)).map(s => `  ${g.id}.${s.id} ${s.done ? '(done) ' : ''}${s.text}`),
   ])
   const runner =

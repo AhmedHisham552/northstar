@@ -81,3 +81,9 @@ test('start and stop', () => {
   expect(parse('stop 3')).toEqual({ kind: 'ops', ops: [{ kind: 'stop', goal: 3 }] })
   expect(parse('stop')).toEqual({ kind: 'ops', ops: [{ kind: 'stop' }] })
 })
+
+test('add keeps quotes, and a long text with ; stays one goal', () => {
+  expect(op('add Fix the "Save" button; Ship v2')).toEqual({ kind: 'add', texts: ['Fix the "Save" button', 'Ship v2'], label: null })
+  const para = 'Make the track command smarter when a goal is long and wordy; rephrase it simply and keep the rest as details for the agents to work through'
+  expect(op(`add @here ${para}`)).toEqual({ kind: 'add', texts: [para], label: '@here' })
+})

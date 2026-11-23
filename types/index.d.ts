@@ -2,6 +2,8 @@ export type Sub = { id: number; text: string; done: boolean }
 export type Goal = {
   id: number
   text: string
+  // The full text a long goal was typed with; `text` is its short title.
+  detail?: string
   label: string | null
   progress: number | null
   createdAt: string

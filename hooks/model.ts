@@ -14,7 +14,7 @@ export type Event = {
   open?: string[]
 }
 export type Op =
-  | { kind: 'add'; texts: string[]; label: string | null }
+  | { kind: 'add'; texts: string[]; label: string | null; details?: (string | undefined)[] }
   | { kind: 'sub'; goal: number; texts: string[] }
   | { kind: 'tick'; goal: number; sub: number; note?: string; done?: boolean }
   | { kind: 'progress'; goal: number; value: number; note?: string }
@@ -26,6 +26,9 @@ export type Op =
   | { kind: 'stop'; goal?: number; sub?: number }
 
 type Result = { state: State; events: Event[] } | { error: string }
+
+// Longer goal names get a short title, with the full text kept as the goal's detail.
+export const TITLE_MAX = 60
 
 export const emptyState = (): State => ({ version: 2, nextId: 1, focus: {}, goals: [] })
 
@@ -76,8 +79,9 @@ export function applyOp(input: State, op: Op, at: string): Result {
     events.push({ at, type, goal: g.id, label: g.label, text: g.text, ...extra })
 
   if (op.kind === 'add') {
-    for (const text of op.texts) {
-      const g: Goal = { id: s.nextId++, text, label: op.label, progress: null, createdAt: at, doneAt: null, nextSub: 1, subs: [] }
+    for (const [i, text] of op.texts.entries()) {
+      const detail = op.details?.[i]
+      const g: Goal = { id: s.nextId++, text, ...(detail ? { detail } : {}), label: op.label, progress: null, createdAt: at, doneAt: null, nextSub: 1, subs: [] }
       s.goals.push(g)
       log(g, 'goal.add')
     }

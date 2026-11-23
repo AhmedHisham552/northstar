@@ -148,6 +148,20 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('focus 3')
   await run('focus off')
   expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).focus).toEqual({})
+
+  // A long goal is titled by the model and keeps its full text as details.
+  const para = 'Make the track command smarter: when a goal is long, rephrase it and keep "all of this" as details'
+  await run(`add ${para}`)
+  expect(prompts.at(-1)).toContain('Rewrite this goal')
+  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Today I ticked Read docs', detail: para })
+})
+
+test('the NOW goal shows its details faded under the title', async ($, on) => {
+  const s = build([{ kind: 'add', texts: ['Smarter track add'], details: ['Rephrase long goals and keep the text'], label: null }, { kind: 'focus', goal: 1, label: null }])
+  on('state.get', () => view(s))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await texts(ui, /^Rephrase long goals/)).toBe('Rephrase long goals and keep the text')
+  await ui.unmount()
 })
 
 test('Claude gets the goals with each prompt, and the hint line gets the NOW tail', async ($, on) => {
