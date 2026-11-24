@@ -1,12 +1,19 @@
 import { focused } from './brief'
-import { glyph, labelName, progressOf, visibleGoals } from './model'
+import { glyph, labelName, progressOf, shownToday, visibleGoals } from './model'
 import type { Goal, State, View } from '../types'
 
 export type { View }
 type Shown = View & { state: State }
 // The surface's element table, as $.ui.resolve(e) returns it.
 type Els = { Box: any; Text: any; Button: any }
-type Act = { focus: (goal: number) => void; tick: (goal: number, sub: number, done: boolean) => void; toggle: (label: string) => void; spin: (key: string) => string | null }
+type Act = {
+  focus: (goal: number) => void
+  tick: (goal: number, sub: number, done: boolean) => void
+  toggle: (label: string) => void
+  spin: (key: string) => string | null
+  accept: () => void
+  dismiss: () => void
+}
 
 const ACCENT = 'claude'
 
@@ -57,6 +64,57 @@ function goalRow(ui: Els, g: Goal, width: number, act: Act) {
   return g.doneAt || !g.subs.length ? head : <ui.Box flexDirection="column">{head}{subRows(ui, g, width, act)}</ui.Box>
 }
 
+// Pane toggles kept with the collapsed labels; § can't start a repo label.
+const TODAY = '§today'
+const ALL = '§all'
+const TODAY_ROWS = 5
+
+// What got finished today, newest first, plus the grouping card when Claude suggested one.
+function todayTree(ui: Els, v: Shown, width: number, act: Act) {
+  const { Box, Text, Button } = ui
+  const t = shownToday(v.state, v.today)
+  if (!t?.items.length) return null
+  const collapsed = (v.collapsed ?? []).includes(TODAY)
+  const all = (v.collapsed ?? []).includes(ALL)
+  const items = [...t.items].reverse()
+  const shown = all ? items : items.slice(0, TODAY_ROWS)
+  const inner = Math.max(1, width - 4)
+  const picked = t.suggest ? t.suggest.ids.map(id => t.items.find(i => i.id === id)).filter(Boolean) : []
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Button key="today" plain onPress={() => act.toggle(TODAY)}>
+        <Text color={ACCENT} bold>{`${collapsed ? '▸' : '▾'} Today`.padEnd(width - String(items.length).length)}</Text>
+        <Text color="subtle">{String(items.length)}</Text>
+      </Button>
+      {!collapsed && t.suggest && (
+        <Box flexDirection="column" borderStyle="round" borderColor="subtle" paddingX={1}>
+          <Text color={ACCENT}>Group as a goal?</Text>
+          <Text bold>{fit(t.suggest.title, inner)}</Text>
+          {picked.map(i => <Text dimColor>{fit(`· ${i!.text}`, inner)}</Text>)}
+          <Box justifyContent="space-between">
+            <Button key="accept" plain onPress={act.accept}><Text color="success">[ Group ]</Text></Button>
+            <Button key="dismiss" plain onPress={act.dismiss}><Text color="subtle">[ Dismiss ]</Text></Button>
+          </Box>
+        </Box>
+      )}
+      {!collapsed &&
+        shown.map(i => (
+          <Text>
+            {i.ref ? <Text color="success">✓</Text> : <Text color={ACCENT}>·</Text>}
+            {' '}
+            {i.ref && <Text color="subtle">{`${i.ref} `}</Text>}
+            {fit(i.text, Math.max(1, width - 2 - (i.ref ? i.ref.length + 1 : 0)))}
+          </Text>
+        ))}
+      {!collapsed && items.length > TODAY_ROWS && (
+        <Button key="all" plain onPress={() => act.toggle(ALL)}>
+          <Text color="subtle">{all ? '  show less' : `  +${items.length - TODAY_ROWS} more`}</Text>
+        </Button>
+      )}
+    </Box>
+  )
+}
+
 export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const { Box, Text, Button } = ui
   const goals = visibleGoals(v.state, v.today)
@@ -77,6 +135,8 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
         {header}
         <Text color="subtle">No goals yet.</Text>
         <Text color="subtle">/track add &lt;text&gt;</Text>
+        <Text> </Text>
+        {todayTree(ui, v, width, act)}
       </Box>
     )
   const now = focusedGoal(v)
@@ -127,6 +187,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
           </Button>
         ),
       )}
+      {todayTree(ui, v, width, act)}
     </Box>
   )
 }

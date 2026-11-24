@@ -71,3 +71,17 @@ test('details reach Claude and dispatched agents', () => {
   expect(goalsBrief({ state: s, label: 'shop', today: '2026-11-18', collapsed: [] })).toContain('#1 Smarter track add [general] (NOW)\n  details: the whole paragraph')
   expect(workPrompt([{ goal: s.goals[0]! }], 'agents')).toContain('#1 Smarter track add\n  details (as I wrote it): the whole paragraph')
 })
+
+test('the brief lists ad-hoc work and a waiting card, and comes even with no open goals', () => {
+  let s = emptyState()
+  for (const op of [{ kind: 'did', text: 'Slack sync', label: null }, { kind: 'did', text: 'rename', label: null }, { kind: 'group', title: 'W', ids: [1, 2] }] as Op[]) {
+    const r = applyOp(s, op, AT)
+    if ('error' in r) throw new Error(r.error)
+    s = r.state
+  }
+  const b = goalsBrief({ state: s, label: 'shop', today: '2026-11-18', collapsed: [] })
+  expect(b).toContain('(no open goals)')
+  expect(b).toContain('Ad-hoc work logged today (id, text):\n  1 Slack sync\n  2 rename')
+  expect(b).toContain('Grouping card waiting in the pane: "W" (1, 2)')
+  expect(b).toContain('"did <short past-tense line>"')
+})

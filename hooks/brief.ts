@@ -1,4 +1,4 @@
-import { TITLE_MAX, glyph, labelKey, progressOf } from './model'
+import { TITLE_MAX, glyph, labelKey, progressOf, shownToday } from './model'
 import type { Goal } from './model'
 import type { View } from '../types'
 
@@ -40,16 +40,22 @@ export function goalsBrief(v: Shown): string {
     ...(g.detail ? [`  details: ${g === now ? g.detail : cut(g.detail, 200)}`] : []),
     ...g.subs.map(s => `  ${g.id}.${s.id} [${s.done ? 'x' : ' '}] ${s.text}`),
   ])
+  const t = shownToday(v.state, v.today)
+  const adhoc = t?.items.filter(i => i.id !== undefined) ?? []
   return [
     "The user's goals (Waypoint plugin). This session's repo label is " + `"${v.label}".`,
-    ...lines,
+    ...(lines.length ? lines : ['(no open goals)']),
+    ...(adhoc.length ? ['', 'Ad-hoc work logged today (id, text):', ...adhoc.map(i => `  ${i.id} ${i.text}`)] : []),
+    ...(t?.suggest ? [`Grouping card waiting in the pane: "${t.suggest.title}" (${t.suggest.ids.join(', ')})`] : []),
     '',
     'Keep this tracker current with the update_goals tool, without asking:',
     '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
     '- When you begin a listed sub-task, call "start <n>.<m>" (it spins in the pane); "start <n>" for a goal without sub-tasks.',
     '- When your work finishes a listed sub-task, call "tick <n>.<m>"; when it finishes a goal without sub-tasks, call "done <n>".',
     '- When you stop working on a started item without finishing it, call "stop <n>" or "stop <n>.<m>".',
-    '- Do not invent goals; add one only when the user asks.',
+    '- When you finish a distinct piece of work that is not a listed goal or sub-task, log it with "did <short past-tense line>" without asking. One line per piece of work; skip quick questions and lookups.',
+    '- When 3 or more ad-hoc items logged today share one topic, call "group <short title>: <ids>" once. It shows a card in the pane; do not mention it in your reply, and never repeat a grouping that was dismissed.',
+    '- Never add goals on your own; add one only when the user asks.',
   ].join('\n')
 }
 

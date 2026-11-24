@@ -90,6 +90,22 @@ export function parse(args: string): Cmd {
     }
     case 'focus':
       return a === 'off' ? op({ kind: 'focus', goal: null, label: '@here' }) : n ? op({ kind: 'focus', goal: n, label: '@here' }) : HELP
+    case 'yes':
+      return words.length === 1 ? op({ kind: 'accept' }) : HELP
+    case 'no':
+      return words.length === 1 ? op({ kind: 'dismiss' }) : HELP
+    case 'did': {
+      // `did [@label] Rewrote the status sync`: ad-hoc work for Today, raw so quotes stay.
+      const rest = args.trim().slice(3).trim().split(/\s+/).filter(Boolean)
+      const label = rest[0]?.startsWith('@') ? toLabel(rest.shift()!) : '@here'
+      return rest.length ? op({ kind: 'did', text: rest.join(' '), label }) : HELP
+    }
+    case 'group': {
+      // `group Waypoint improvements: 3, 4, 5`
+      const m = args.trim().slice(5).match(/^(.+):\s*([\d,\s[\]]+)$/)
+      const ids = (m?.[2] ?? '').split(/[\s,[\]]+/).filter(Boolean).map(Number)
+      return m && m[1]!.trim() && ids.length ? op({ kind: 'group', title: m[1]!.trim(), ids }) : HELP
+    }
     case 'rename': {
       // The new name is read from the raw line, so quotes in it are kept.
       const text = args.trim().split(/\s+/).slice(2).join(' ')
