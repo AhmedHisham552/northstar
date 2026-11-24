@@ -54,6 +54,8 @@ export const HELP = [
   '/track start <n|n.m> … | stop    mark work in progress (spins in the pane)',
   '/track rename <n|n.m> <name>     rename a goal or sub-task',
   '/track move <n>[, <n> …] @label  move goals to a label (@general, @here)',
+  '/track did <what you did>        log ad-hoc work under Today',
+  '/track yes | no                  accept or dismiss the grouping card',
   '/track @label                    open / close a label in the pane',
   '/track yesterday | today | week  summary with a ready-to-post update',
   '/track from YYYY-MM-DD to YYYY-MM-DD',
@@ -126,7 +128,8 @@ async function change($: Engine, o: Opts, input: Op): Promise<string> {
   const resolved: Op =
     op.kind === 'add' && op.label === '@here' ? { ...op, label } :
     op.kind === 'focus' && op.label === '@here' ? { ...op, label } :
-    op.kind === 'tag' && op.label === '@here' ? { ...op, label } : op
+    op.kind === 'tag' && op.label === '@here' ? { ...op, label } :
+    op.kind === 'did' && op.label === '@here' ? { ...op, label } : op
   const at = localIso(await now($))
   const current = await loadState(io, d)
   // `focus off` clears the focus NOW shows: the repo's, else General's.
@@ -137,6 +140,10 @@ async function change($: Engine, o: Opts, input: Op): Promise<string> {
   for (const e of r.events) await appendEvent(io, d, e)
   await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), collapsed: old?.collapsed ?? [] }))
   if (target.kind === 'focus' && target.goal === null) return `Focus cleared for ${labelKey(target.label)}.`
+  if (target.kind === 'did') return `logged today: ${target.text}`
+  if (target.kind === 'group') return `Suggested in the pane: group as "${target.title}" (/track yes or /track no)`
+  if (target.kind === 'dismiss') return 'Grouping dismissed.'
+  if (target.kind === 'accept') return r.events.filter(e => e.type === 'goal.add').map(e => `grouped: #${e.goal} ${e.text}`).join('\n')
   return r.events.map(e => `${e.type.replace('.', ' ')}: ${e.sub ? `${e.goal}.${e.sub}` : `#${e.goal}`} ${e.text}`).join('\n')
 }
 
@@ -208,7 +215,7 @@ export const register: Register = (on, options) => {
       name: 'update_goals',
       description:
         "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
-        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "did Rewrote the status sync", "group Waypoint fixes: 3, 4, 5", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
         'A goal name over ' + TITLE_MAX + ' characters gets a short title, with the full text kept as its details. ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
@@ -256,7 +263,7 @@ export const register: Register = (on, options) => {
     for (const op of cmd.kind === 'op' ? [cmd.op] : cmd.kind === 'ops' ? cmd.ops : [])
       if (op.kind === 'start') quiet.started.add(op.sub ? `${op.goal}.${op.sub}` : String(op.goal))
     // Claude changed the tracker on its own: say so, with the way back for a focus switch.
-    if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress'].includes(cmd.op.kind) && !result.startsWith('no ')) {
+    if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress', 'did'].includes(cmd.op.kind) && !result.startsWith('no ')) {
       const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
       const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /track focus ${prev} to undo` : ''
       $.ui.toast(`Waypoint: ${result.split('\n').at(-1)}${undo}`)
@@ -277,6 +284,8 @@ export const register: Register = (on, options) => {
       focus: goal => void change($, o, { kind: 'focus', goal, label: '@here' }),
       tick: (goal, sub, done) => void change($, o, { kind: 'tick', goal, sub, done }),
       toggle: label => void update($, view, x => (x ? toggled(x, label) : x)),
+      accept: () => void change($, o, { kind: 'accept' }),
+      dismiss: () => void change($, o, { kind: 'dismiss' }),
     })
   })
 
@@ -296,6 +305,7 @@ export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
     await refresh($, o)
     const v = await read($, view)
-    if (!o.autoUpdate || e.command || !v?.state || !v.state.goals.some(g => !g.doneAt)) return next(e)
+    // Sent even with no open goals, so ad-hoc work still gets logged.
+    if (!o.autoUpdate || e.command || !v?.state) return next(e)
     return next({ ...e, context: [...(e.context ?? []), goalsBrief({ ...v, state: v.state })] })
   })}

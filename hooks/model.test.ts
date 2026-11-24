@@ -152,3 +152,32 @@ test('a goal from another label becomes Now under the label it was focused from'
   s = ok(applyOp(s, { kind: 'focus', goal: 1, label: 'qoyod' }, AT)).state
   expect(s.focus).toEqual({ qoyod: 1 })
 })
+
+test('Today collects ticks, finished goals and ad-hoc work, and starts fresh each day', () => {
+  let s = seeded()
+  s = ok(applyOp(s, { kind: 'tick', goal: 1, sub: 1 }, AT)).state
+  s = ok(applyOp(s, { kind: 'did', text: 'Slack status sync', label: 'qoyod' }, AT)).state
+  s = ok(applyOp(s, { kind: 'done', goal: 2 }, AT)).state
+  expect(s.today!.items.map(i => i.ref ?? i.id)).toEqual(['1.1', 1, '#2'])
+  s = ok(applyOp(s, { kind: 'tick', goal: 1, sub: 1 }, AT)).state // untick drops it again
+  expect(s.today!.items.map(i => i.ref ?? i.id)).toEqual([1, '#2'])
+  const next = ok(applyOp(s, { kind: 'did', text: 'Tomorrow', label: null }, '2026-11-19T09:00:00.000Z'))
+  expect(next.state.today).toEqual({ day: '2026-11-19', items: [{ id: 2, text: 'Tomorrow', label: null }] })
+  expect(next.events[0]).toMatchObject({ type: 'adhoc.done', goal: 0, sub: 2, text: 'Tomorrow' })
+})
+
+test('a grouping card files ad-hoc items under a finished goal, or is dismissed for good', () => {
+  let s = emptyState()
+  for (const text of ['rename', 'move', 'sub-tasks fix', 'Slack sync']) s = ok(applyOp(s, { kind: 'did', text, label: 'qoyod' }, AT)).state
+  expect(applyOp(s, { kind: 'group', title: 'X', ids: [1, 9] }, AT)).toEqual({ error: 'no ad-hoc item 9 today' })
+  expect(applyOp(s, { kind: 'accept' }, AT)).toEqual({ error: 'nothing to accept' })
+  s = ok(applyOp(s, { kind: 'group', title: 'Waypoint', ids: [1, 2] }, AT)).state
+  s = ok(applyOp(s, { kind: 'dismiss' }, AT)).state
+  expect(applyOp(s, { kind: 'group', title: 'Again', ids: [2, 1] }, AT)).toEqual({ error: 'that grouping was dismissed earlier' })
+  s = ok(applyOp(s, { kind: 'group', title: 'Waypoint', ids: [1, 2, 3] }, AT)).state
+  const r = ok(applyOp(s, { kind: 'accept' }, AT))
+  expect(r.state.goals[0]).toMatchObject({ id: 1, text: 'Waypoint', label: 'qoyod', doneAt: AT, subs: [{ text: 'rename', done: true }, { text: 'move', done: true }, { text: 'sub-tasks fix', done: true }] })
+  expect(r.state.today!.items.map(i => i.ref ?? i.id)).toEqual([4, '#1'])
+  expect(r.state.today!.suggest).toBeUndefined()
+  expect(r.events.map(e => e.type)).toEqual(['goal.add', 'sub.add', 'sub.add', 'sub.add', 'sub.done', 'sub.done', 'sub.done', 'adhoc.group', 'goal.done'])
+})

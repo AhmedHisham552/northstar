@@ -1,6 +1,6 @@
-import type { Goal, State, Sub } from '../types'
+import type { DoneItem, Goal, State, Sub, Today } from '../types'
 
-export type { Goal, State, Sub }
+export type { DoneItem, Goal, State, Sub, Today }
 export type Event = {
   at: string
   type: string
@@ -23,6 +23,10 @@ export type Op =
   | { kind: 'focus'; goal: number | null; label: string | null }
   | { kind: 'tag'; goal: number; label: string | null }
   | { kind: 'rename'; goal: number; sub?: number; text: string; detail?: string }
+  | { kind: 'did'; text: string; label: string | null }
+  | { kind: 'group'; title: string; ids: number[] }
+  | { kind: 'accept' }
+  | { kind: 'dismiss' }
   | { kind: 'start'; goal: number; sub?: number }
   | { kind: 'stop'; goal?: number; sub?: number }
 
@@ -49,6 +53,16 @@ export function glyph(p: number): string {
   if (p >= 1) return '◔'
   return '○'
 }
+
+// Today's list, started fresh on a new day.
+export function todayOf(s: State, at: string): Today {
+  const day = at.slice(0, 10)
+  if (s.today?.day !== day) s.today = { day, items: [] }
+  return s.today
+}
+
+export const shownToday = (s: State, today: string) => (s.today?.day === today ? s.today : undefined)
+const groupKey = (ids: number[]) => [...ids].sort((a, b) => a - b).join(',')
 
 export const visibleGoals = (s: State, today: string) => s.goals.filter(g => !g.doneAt || g.doneAt.slice(0, 10) >= today)
 
@@ -89,6 +103,50 @@ export function applyOp(input: State, op: Op, at: string): Result {
     return { state: s, events }
   }
 
+  if (op.kind === 'did') {
+    const id = s.nextLog ?? 1
+    s.nextLog = id + 1
+    todayOf(s, at).items.push({ id, text: op.text, label: op.label })
+    events.push({ at, type: 'adhoc.done', goal: 0, sub: id, label: op.label, text: op.text })
+    return { state: s, events }
+  }
+
+  if (op.kind === 'group') {
+    const t = todayOf(s, at)
+    const bad = op.ids.find(id => !t.items.some(i => i.id === id))
+    if (bad !== undefined) return { error: `no ad-hoc item ${bad} today` }
+    if (op.ids.length < 2) return { error: 'group needs at least 2 items' }
+    if (t.dismissed?.includes(groupKey(op.ids))) return { error: 'that grouping was dismissed earlier' }
+    t.suggest = { title: op.title, ids: op.ids }
+    return { state: s, events }
+  }
+
+  if (op.kind === 'dismiss') {
+    const t = todayOf(s, at)
+    if (!t.suggest) return { error: 'nothing to dismiss' }
+    t.dismissed = [...(t.dismissed ?? []), groupKey(t.suggest.ids)]
+    delete t.suggest
+    return { state: s, events }
+  }
+
+  // Accepting a grouping files the ad-hoc items as a finished goal's ticked sub-tasks; adding a sub-task reopens it.
+  if (op.kind === 'accept') {
+    const t = todayOf(s, at)
+    if (!t.suggest) return { error: 'nothing to accept' }
+    const items = t.suggest.ids.map(id => t.items.find(i => i.id === id)).filter((i): i is DoneItem => !!i)
+    const subs = items.map((i, n) => ({ id: n + 1, text: i.text, done: true }))
+    const g: Goal = { id: s.nextId++, text: t.suggest.title, label: items[0]?.label ?? null, progress: null, createdAt: at, doneAt: at, nextSub: subs.length + 1, subs }
+    s.goals.push(g)
+    log(g, 'goal.add')
+    for (const x of subs) log(g, 'sub.add', { sub: x.id, text: x.text })
+    for (const x of subs) log(g, 'sub.done', { sub: x.id, text: x.text })
+    log(g, 'adhoc.group', { open: t.suggest.ids.map(String) })
+    log(g, 'goal.done')
+    t.items = [...t.items.filter(i => !t.suggest!.ids.includes(i.id ?? -1)), { ref: `#${g.id}`, text: g.text, label: g.label }]
+    delete t.suggest
+    return { state: s, events }
+  }
+
   if (op.kind === 'stop' && op.goal === undefined) {
     s.active = {}
     return { state: s, events }
@@ -102,14 +160,20 @@ export function applyOp(input: State, op: Op, at: string): Result {
   const g = s.goals.find(x => x.id === op.goal)
   if (!g) return { error: `no goal #${op.goal}` }
 
+  const done = (ref: string, text: string) => todayOf(s, at).items.push({ ref, text, label: g.label })
+  const undone = (ref: string) => {
+    if (s.today) s.today.items = s.today.items.filter(i => i.ref !== ref)
+  }
   const finish = (note?: string) => {
     g.doneAt = at
+    done(`#${g.id}`, g.text)
     unmark(s, String(g.id))
     const open = g.subs.filter(x => !x.done).map(x => x.text)
     log(g, 'goal.done', { ...(note ? { note } : {}), ...(open.length ? { open } : {}) })
   }
   const reopen = () => {
     g.doneAt = null
+    undone(`#${g.id}`)
     log(g, 'goal.reopen')
   }
 
@@ -129,6 +193,8 @@ export function applyOp(input: State, op: Op, at: string): Result {
       if (op.done !== undefined && op.done === sub.done) return { state: s, events }
       sub.done = !sub.done
       if (sub.done) unmark(s, `${g.id}.${sub.id}`)
+      if (sub.done) done(`${g.id}.${sub.id}`, sub.text)
+      else undone(`${g.id}.${sub.id}`)
       log(g, sub.done ? 'sub.done' : 'sub.undone', { sub: sub.id, text: sub.text, ...(op.note ? { note: op.note } : {}) })
       if (sub.done && !g.doneAt && g.subs.every(x => x.done)) finish()
       if (!sub.done && g.doneAt) reopen()

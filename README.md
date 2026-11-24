@@ -53,6 +53,9 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.3 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
 - **Long goals get a short title.** Paste a paragraph into `/track add` and Haiku turns it into a short title. The full text is kept as the goal's details, shown faded under the Now goal and handed word for word to Claude and the agents `/waypoint:work` dispatches. A `;` splits goals only when every part is short (60 characters or fewer), so a pasted paragraph stays one goal.
+- **Today.** The bottom of the pane lists what got finished today, newest first: ticked sub-tasks and goals (`✓`) and ad-hoc work (`·`). It shows five; `+N more` opens the rest and the header collapses it. It starts fresh each day.
+- **Ad-hoc work is logged for you.** When Claude finishes something that isn't a goal (a Slack rewrite, a quick fix), it logs one line with `did`, so summaries and standups stop missing it. It never adds goals on its own.
+- **Grouping card.** When three or more of today's ad-hoc items share a topic, a faded card in the pane offers to group them as a goal. **Group** (or `/track yes`) files them as that goal's ticked sub-tasks; **Dismiss** (or `/track no`) drops the card, and the same grouping isn't offered again.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`, with a count (`2/4`) beside goals that have sub-tasks and a percentage beside those that don't, once they have moved.
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
@@ -74,6 +77,8 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track rm 3` / `rm 3.2` / `rm 5, 6, 3.2` | Remove goals and sub-tasks, one or many |
 | `/track focus 3` / `focus off` | Set or clear the Now goal for that goal's label |
 | `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
+| `/track did Rewrote the status sync` | Log ad-hoc work under Today |
+| `/track yes` / `/track no` | Accept or dismiss the grouping card |
 | `/track rename 3 New name` | Rename a goal (`3.2` for a sub-task); its sub-tasks and details stay |
 | `/track move 3, 5 @label` | Move goals to a label (`@general` to clear, `@here` for this repo); `tag` still works |
 | `/track @label` | Open or close another label in the pane (or click its header) |

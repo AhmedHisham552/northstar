@@ -6,8 +6,8 @@ import type { Op, State } from './model'
 const DAY = '2026-11-18'
 const AT = `${DAY}T10:00:00+02:00`
 
-function build(ops: Op[], at = AT): State {
-  let s = emptyState()
+function build(ops: Op[], at = AT, from = emptyState()): State {
+  let s = from
   for (const op of ops) {
     const r = applyOp(s, op, at)
     if ('error' in r) throw new Error(r.error)
@@ -158,6 +158,13 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run(`rename ${id} Smarter track add`)
   await run(`move ${id} @here`)
   expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Smarter track add', detail: para, label: 'shop' })
+
+  // Ad-hoc work, grouped from the card with /track yes.
+  for (const w of ['rename', 'move', 'sub-tasks fix']) expect(await run(`did ${w}`)).toBe(`logged today: ${w}`)
+  expect(await run('group Waypoint: 1, 2, 3')).toContain('Suggested in the pane')
+  expect(await run('yes')).toMatch(/^grouped: #\d+ Waypoint$/)
+  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Waypoint', label: 'shop', subs: [{ done: true }, { done: true }, { done: true }] })
+  expect(await run('no')).toBe('nothing to dismiss')
 })
 
 test('the NOW goal shows its details faded under the title', async ($, on) => {
@@ -236,5 +243,20 @@ test('sub-tasks show under every goal, not only Now', async ($, on) => {
   expect(await texts(ui, /^Now$/)).toBeUndefined()
   expect(await button(ui, 's1.1')).toContain('✓ 1.1 Proposal')
   expect(await button(ui, 's1.2')).toContain('○ 1.2 Align')
+  await ui.unmount()
+})
+
+test('Today lists the newest five with a grouping card, and Group files them', async ($, on) => {
+  let s = build([{ kind: 'add', texts: ['Card research'], label: 'shop' }, { kind: 'sub', goal: 1, texts: ['Read docs'] }, { kind: 'tick', goal: 1, sub: 1 }])
+  for (const text of ['a', 'b', 'c', 'd', 'e']) s = build([{ kind: 'did', text, label: 'shop' }], AT, s)
+  s = build([{ kind: 'group', title: 'Letters', ids: [1, 2, 3] }], AT, s)
+  on('state.get', () => view(s))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await button(ui, 'today')).toMatch(/^▾ Today +7$/)
+  expect(await texts(ui, /^Group as a goal\?$/)).toBe('Group as a goal?')
+  expect(await texts(ui, /^· e$/)).toBe('· e')
+  expect(await texts(ui, /^✓ 1\.1 Read docs$/)).toBeUndefined() // the oldest two are past the first five
+  expect(await button(ui, 'all')).toContain('+2 more')
+  expect(await button(ui, 'accept')).toBe('[ Group ]')
   await ui.unmount()
 })
