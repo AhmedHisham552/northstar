@@ -56,7 +56,7 @@ export const HELP = [
   '/track move <n>[, <n> …] @label  move goals to a label (@general, @here)',
   '/track did <what you did>        log ad-hoc work under Today',
   '/track undo [n]                  remove logged item n (default: the newest)',
-  '/track yes | no                  accept or dismiss the grouping card',
+  '/track yes | no                  accept or dismiss the card in the pane',
   '/track @label                    open / close a label in the pane',
   '/track yesterday | today | week  summary with a ready-to-post update',
   '/track from YYYY-MM-DD to YYYY-MM-DD',
@@ -130,7 +130,7 @@ async function change($: Engine, o: Opts, input: Op): Promise<string> {
     op.kind === 'add' && op.label === '@here' ? { ...op, label } :
     op.kind === 'focus' && op.label === '@here' ? { ...op, label } :
     op.kind === 'tag' && op.label === '@here' ? { ...op, label } :
-    op.kind === 'did' && op.label === '@here' ? { ...op, label } : op
+    (op.kind === 'did' || op.kind === 'offer') && op.label === '@here' ? { ...op, label } : op
   const at = localIso(await now($))
   const current = await loadState(io, d)
   // `focus off` clears the focus NOW shows: the repo's, else General's.
@@ -144,7 +144,9 @@ async function change($: Engine, o: Opts, input: Op): Promise<string> {
   if (target.kind === 'did') return `logged today: ${target.text}`
   if (target.kind === 'undo') return target.id === undefined ? 'Removed the newest logged item.' : `Removed logged item ${target.id}.`
   if (target.kind === 'group') return `Suggested in the pane: group as "${target.title}" (/track yes or /track no)`
-  if (target.kind === 'dismiss') return 'Grouping dismissed.'
+  if (target.kind === 'offer') return `Suggested in the pane: track "${target.title}" as a goal (/track yes or /track no)`
+  if (r.events.length === 1 && r.events[0]!.type === 'goal.add') return `goal add: #${r.events[0]!.goal} ${r.events[0]!.text}`
+  if (target.kind === 'dismiss') return 'Suggestion dismissed.'
   if (target.kind === 'accept') return r.events.filter(e => e.type === 'goal.add').map(e => `grouped: #${e.goal} ${e.text}`).join('\n')
   return r.events.map(e => `${e.type.replace('.', ' ')}: ${e.sub ? `${e.goal}.${e.sub}` : `#${e.goal}`} ${e.text}`).join('\n')
 }
@@ -217,7 +219,7 @@ export const register: Register = (on, options) => {
       name: 'update_goals',
       description:
         "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
-        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "did Rewrote the status sync", "group Waypoint fixes: 3, 4, 5", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "did Rewrote the status sync", "offer Cash forecast spike", "group Waypoint fixes: 3, 4, 5", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
         'A goal name over ' + TITLE_MAX + ' characters gets a short title, with the full text kept as its details. ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
@@ -288,6 +290,8 @@ export const register: Register = (on, options) => {
       toggle: label => void update($, view, x => (x ? toggled(x, label) : x)),
       accept: () => void change($, o, { kind: 'accept' }),
       dismiss: () => void change($, o, { kind: 'dismiss' }),
+      take: () => void change($, o, { kind: 'accept', card: 'offer' }),
+      pass: () => void change($, o, { kind: 'dismiss', card: 'offer' }),
     })
   })
 

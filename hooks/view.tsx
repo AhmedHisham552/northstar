@@ -13,6 +13,8 @@ type Act = {
   spin: (key: string) => string | null
   accept: () => void
   dismiss: () => void
+  take: () => void
+  pass: () => void
 }
 
 const ACCENT = 'claude'
@@ -68,6 +70,23 @@ function goalRow(ui: Els, g: Goal, width: number, act: Act) {
 const TODAY = '§today'
 const ALL = '§all'
 const TODAY_ROWS = 5
+
+// Claude's suggestion to track new work as a goal; nothing is added until Add is pressed.
+function offerCard(ui: Els, v: Shown, width: number, act: Act) {
+  const { Box, Text, Button } = ui
+  const o = shownToday(v.state, v.today)?.offer
+  if (!o) return null
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="subtle" paddingX={1} marginBottom={1}>
+      <Text color={ACCENT}>Track as a goal?</Text>
+      <Text bold>{fit(o.title, Math.max(1, width - 4))}</Text>
+      <Box justifyContent="space-between">
+        <Button key="take" plain onPress={act.take}><Text color="success">[ Add ]</Text></Button>
+        <Button key="pass" plain onPress={act.pass}><Text color="subtle">[ Dismiss ]</Text></Button>
+      </Box>
+    </Box>
+  )
+}
 
 // What got finished today, newest first, plus the grouping card when Claude suggested one.
 function todayTree(ui: Els, v: Shown, width: number, act: Act) {
@@ -133,6 +152,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
     return (
       <Box flexDirection="column">
         {header}
+        {offerCard(ui, v, width, act)}
         <Text color="subtle">No goals yet.</Text>
         <Text color="subtle">/track add &lt;text&gt;</Text>
         <Text> </Text>
@@ -153,6 +173,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   return (
     <Box flexDirection="column">
       {header}
+        {offerCard(ui, v, width, act)}
       {now && (
         <Box flexDirection="column" marginBottom={1}>
           <Box justifyContent="space-between">
