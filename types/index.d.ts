@@ -15,7 +15,7 @@ export type Goal = {
 // active: work in progress, key '3' (goal) or '3.2' (sub-task) → when it started.
 // Today: what got finished today. Ticks carry a ref ('19.1', '#19'); ad-hoc work logged with `did` carries an id.
 export type DoneItem = { id?: number; ref?: string; text: string; label: string | null }
-export type Today = { day: string; items: DoneItem[]; suggest?: { title: string; ids: number[] }; dismissed?: string[] }
+export type Today = { day: string; items: DoneItem[]; suggest?: { title: string; ids: number[] }; offer?: { title: string; label: string | null }; dismissed?: string[] }
 export type State = {
   version: 2
   nextId: number

@@ -178,6 +178,19 @@ test('undo removes a logged item, the newest by default, and drops a card that u
   expect(applyOp(r.state, { kind: 'undo', id: 9 }, AT)).toEqual({ error: 'no ad-hoc item 9 today' })
 })
 
+test('a goal card adds an open, focused goal only on accept, and stays gone once dismissed', () => {
+  let s = ok(applyOp(emptyState(), { kind: 'offer', title: 'Cash forecast spike', label: 'qoyod' }, AT)).state
+  expect(s.goals).toEqual([])
+  const r = ok(applyOp(s, { kind: 'accept' }, AT))
+  expect(r.state.goals[0]).toMatchObject({ id: 1, text: 'Cash forecast spike', label: 'qoyod', doneAt: null })
+  expect(r.state.focus.qoyod).toBe(1)
+  expect(r.state.today!.offer).toBeUndefined()
+  expect(applyOp(r.state, { kind: 'offer', title: 'cash forecast spike', label: 'qoyod' }, AT)).toEqual({ error: 'that goal is already open' })
+  s = ok(applyOp(s, { kind: 'dismiss', card: 'offer' }, AT)).state
+  expect(s.goals).toEqual([])
+  expect(applyOp(s, { kind: 'offer', title: 'Cash forecast spike', label: null }, AT)).toEqual({ error: 'that goal suggestion was dismissed earlier' })
+})
+
 test('a grouping card files ad-hoc items under a finished goal, or is dismissed for good', () => {
   let s = emptyState()
   for (const text of ['rename', 'move', 'sub-tasks fix', 'Slack sync']) s = ok(applyOp(s, { kind: 'did', text, label: 'qoyod' }, AT)).state

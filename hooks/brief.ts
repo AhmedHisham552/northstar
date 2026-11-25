@@ -47,6 +47,7 @@ export function goalsBrief(v: Shown): string {
     ...(lines.length ? lines : ['(no open goals)']),
     ...(adhoc.length ? ['', 'Ad-hoc work logged today (id, text):', ...adhoc.map(i => `  ${i.id} ${i.text}`)] : []),
     ...(t?.suggest ? [`Grouping card waiting in the pane: "${t.suggest.title}" (${t.suggest.ids.join(', ')})`] : []),
+    ...(t?.offer ? [`Goal card waiting in the pane: "${t.offer.title}"`] : []),
     '',
     'Keep this tracker current with the update_goals tool, without asking:',
     '- When the user prompts about work that clearly belongs to a different open goal than NOW, call update_goals with "focus <n>" first.',
@@ -55,7 +56,8 @@ export function goalsBrief(v: Shown): string {
     '- When you stop working on a started item without finishing it, call "stop <n>" or "stop <n>.<m>".',
     '- When you finish a distinct piece of work that is not a listed goal or sub-task, log it with "did <short past-tense line>" without asking. One line per piece of work; skip quick questions and lookups.',
     '- When 3 or more ad-hoc items logged today share one topic, call "group <short title>: <ids>" once. It shows a card in the pane; do not mention it in your reply, and never repeat a grouping that was dismissed.',
-    '- Never add goals on your own; add one only when the user asks.',
+    '- When the user starts clearly multi-step work (several turns or sub-tasks) that matches no open goal, call "offer <short title>" once. It shows a card in the pane for the user to add; do not mention it in your reply, skip quick questions and one-off fixes, and never repeat a dismissed suggestion.',
+    '- Never add goals on your own; add one only when the user asks or adds the card.',
   ].join('\n')
 }
 

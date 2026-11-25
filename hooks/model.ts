@@ -26,8 +26,9 @@ export type Op =
   | { kind: 'did'; text: string; label: string | null }
   | { kind: 'undo'; id?: number }
   | { kind: 'group'; title: string; ids: number[] }
-  | { kind: 'accept' }
-  | { kind: 'dismiss' }
+  | { kind: 'offer'; title: string; label: string | null }
+  | { kind: 'accept'; card?: 'offer' }
+  | { kind: 'dismiss'; card?: 'offer' }
   | { kind: 'start'; goal: number; sub?: number }
   | { kind: 'stop'; goal?: number; sub?: number }
 
@@ -64,6 +65,7 @@ export function todayOf(s: State, at: string): Today {
 
 export const shownToday = (s: State, today: string) => (s.today?.day === today ? s.today : undefined)
 const groupKey = (ids: number[]) => [...ids].sort((a, b) => a - b).join(',')
+const offerKey = (title: string) => `offer:${title.trim().toLowerCase()}`
 
 export const visibleGoals = (s: State, today: string) => s.goals.filter(g => !g.doneAt || g.doneAt.slice(0, 10) >= today)
 
@@ -130,6 +132,32 @@ export function applyOp(input: State, op: Op, at: string): Result {
     if (op.ids.length < 2) return { error: 'group needs at least 2 items' }
     if (t.dismissed?.includes(groupKey(op.ids))) return { error: 'that grouping was dismissed earlier' }
     t.suggest = { title: op.title, ids: op.ids }
+    return { state: s, events }
+  }
+
+  // A goal card Claude shows when new multi-step work matches no open goal; only the user's Add creates the goal.
+  if (op.kind === 'offer') {
+    const t = todayOf(s, at)
+    const key = offerKey(op.title)
+    if (t.dismissed?.includes(key)) return { error: 'that goal suggestion was dismissed earlier' }
+    if (s.goals.some(g => !g.doneAt && offerKey(g.text) === key)) return { error: 'that goal is already open' }
+    t.offer = { title: op.title, label: op.label }
+    return { state: s, events }
+  }
+
+  // yes/no without a card act on the grouping card first, then the goal card.
+  if ((op.kind === 'accept' || op.kind === 'dismiss') && (op.card === 'offer' || !s.today?.suggest) && s.today?.offer && shownToday(s, at.slice(0, 10))) {
+    const t = s.today
+    const o = t.offer!
+    delete t.offer
+    if (op.kind === 'dismiss') {
+      t.dismissed = [...(t.dismissed ?? []), offerKey(o.title)]
+      return { state: s, events }
+    }
+    const g: Goal = { id: s.nextId++, text: o.title, label: o.label, progress: null, createdAt: at, doneAt: null, nextSub: 1, subs: [] }
+    s.goals.push(g)
+    s.focus[labelKey(o.label)] = g.id
+    log(g, 'goal.add')
     return { state: s, events }
   }
 

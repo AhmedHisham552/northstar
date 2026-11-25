@@ -260,3 +260,13 @@ test('Today lists the newest five with a grouping card, and Group files them', a
   expect(await button(ui, 'accept')).toBe('[ Group ]')
   await ui.unmount()
 })
+
+test('a goal card shows above the goals with Add and Dismiss', async ($, on) => {
+  const s = build([{ kind: 'offer', title: 'Cash forecast spike', label: 'shop' }])
+  on('state.get', () => view(s))
+  const ui = await $.ui.mount(PANE('terminal'))
+  expect(await texts(ui, /^Track as a goal\?$/)).toBe('Track as a goal?')
+  expect(await button(ui, 'take')).toBe('[ Add ]')
+  expect(await button(ui, 'pass')).toBe('[ Dismiss ]')
+  await ui.unmount()
+})
