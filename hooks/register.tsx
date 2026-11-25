@@ -55,6 +55,7 @@ export const HELP = [
   '/track rename <n|n.m> <name>     rename a goal or sub-task',
   '/track move <n>[, <n> …] @label  move goals to a label (@general, @here)',
   '/track did <what you did>        log ad-hoc work under Today',
+  '/track undo [n]                  remove logged item n (default: the newest)',
   '/track yes | no                  accept or dismiss the grouping card',
   '/track @label                    open / close a label in the pane',
   '/track yesterday | today | week  summary with a ready-to-post update',
@@ -141,6 +142,7 @@ async function change($: Engine, o: Opts, input: Op): Promise<string> {
   await update($, view, old => ({ state: r.state, label, today: at.slice(0, 10), collapsed: old?.collapsed ?? [] }))
   if (target.kind === 'focus' && target.goal === null) return `Focus cleared for ${labelKey(target.label)}.`
   if (target.kind === 'did') return `logged today: ${target.text}`
+  if (target.kind === 'undo') return target.id === undefined ? 'Removed the newest logged item.' : `Removed logged item ${target.id}.`
   if (target.kind === 'group') return `Suggested in the pane: group as "${target.title}" (/track yes or /track no)`
   if (target.kind === 'dismiss') return 'Grouping dismissed.'
   if (target.kind === 'accept') return r.events.filter(e => e.type === 'goal.add').map(e => `grouped: #${e.goal} ${e.text}`).join('\n')

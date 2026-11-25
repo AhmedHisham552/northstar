@@ -106,4 +106,7 @@ test('did, group, yes and no', () => {
   expect(op('yes')).toEqual({ kind: 'accept' })
   expect(op('no')).toEqual({ kind: 'dismiss' })
   expect(parse('did')).toEqual({ kind: 'help' })
+  expect(op('undo')).toEqual({ kind: 'undo' })
+  expect(op('undo 2')).toEqual({ kind: 'undo', id: 2 })
+  expect(parse('undo x')).toEqual({ kind: 'help' })
 })

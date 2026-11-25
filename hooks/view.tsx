@@ -102,8 +102,8 @@ function todayTree(ui: Els, v: Shown, width: number, act: Act) {
           <Text>
             {i.ref ? <Text color="success">✓</Text> : <Text color={ACCENT}>·</Text>}
             {' '}
-            {i.ref && <Text color="subtle">{`${i.ref} `}</Text>}
-            {fit(i.text, Math.max(1, width - 2 - (i.ref ? i.ref.length + 1 : 0)))}
+            <Text color="subtle">{`${i.ref ?? i.id} `}</Text>
+            {fit(i.text, Math.max(1, width - 3 - String(i.ref ?? i.id).length))}
           </Text>
         ))}
       {!collapsed && items.length > TODAY_ROWS && (
