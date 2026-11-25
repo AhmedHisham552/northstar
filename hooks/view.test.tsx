@@ -254,7 +254,7 @@ test('Today lists the newest five with a grouping card, and Group files them', a
   const ui = await $.ui.mount(PANE('terminal'))
   expect(await button(ui, 'today')).toMatch(/^▾ Today +7$/)
   expect(await texts(ui, /^Group as a goal\?$/)).toBe('Group as a goal?')
-  expect(await texts(ui, /^· e$/)).toBe('· e')
+  expect(await texts(ui, /^· 5 e$/)).toBe('· 5 e')
   expect(await texts(ui, /^✓ 1\.1 Read docs$/)).toBeUndefined() // the oldest two are past the first five
   expect(await button(ui, 'all')).toContain('+2 more')
   expect(await button(ui, 'accept')).toBe('[ Group ]')

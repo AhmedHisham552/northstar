@@ -122,6 +122,7 @@ export function summarize(events: Event[], from: Date, to: Date, title: string, 
 
   // Ad-hoc work, unless it was later grouped under a goal (then it shows as that goal's sub-tasks).
   const filed = new Set(events.filter(e => e.type === 'adhoc.group' && t(e) < to.getTime()).flatMap(e => e.open ?? []))
+  for (const e of events) if (e.type === 'adhoc.undo') filed.add(String(e.sub))
   for (const e of inRange) if (e.type === 'adhoc.done' && !filed.has(String(e.sub))) done.push({ label: e.label, text: `· ${e.text}` })
 
   const moved: Line[] = []

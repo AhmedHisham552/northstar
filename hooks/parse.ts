@@ -100,6 +100,8 @@ export function parse(args: string): Cmd {
       const label = rest[0]?.startsWith('@') ? toLabel(rest.shift()!) : '@here'
       return rest.length ? op({ kind: 'did', text: rest.join(' '), label }) : HELP
     }
+    case 'undo':
+      return words.length === 1 ? op({ kind: 'undo' }) : words.length === 2 && /^\d+$/.test(a) ? op({ kind: 'undo', id: Number(a) }) : HELP
     case 'group': {
       // `group Waypoint improvements: 3, 4, 5`
       const m = args.trim().slice(5).match(/^(.+):\s*([\d,\s[\]]+)$/)

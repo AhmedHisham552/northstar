@@ -166,6 +166,18 @@ test('Today collects ticks, finished goals and ad-hoc work, and starts fresh eac
   expect(next.events[0]).toMatchObject({ type: 'adhoc.done', goal: 0, sub: 2, text: 'Tomorrow' })
 })
 
+test('undo removes a logged item, the newest by default, and drops a card that used it', () => {
+  let s = emptyState()
+  for (const text of ['a', 'b', 'c']) s = ok(applyOp(s, { kind: 'did', text, label: null }, AT)).state
+  s = ok(applyOp(s, { kind: 'group', title: 'X', ids: [1, 2] }, AT)).state
+  const r = ok(applyOp(s, { kind: 'undo', id: 1 }, AT))
+  expect(r.state.today!.items.map(i => i.id)).toEqual([2, 3])
+  expect(r.state.today!.suggest).toBeUndefined()
+  expect(r.events[0]).toMatchObject({ type: 'adhoc.undo', sub: 1, text: 'a' })
+  expect(ok(applyOp(r.state, { kind: 'undo' }, AT)).state.today!.items.map(i => i.id)).toEqual([2])
+  expect(applyOp(r.state, { kind: 'undo', id: 9 }, AT)).toEqual({ error: 'no ad-hoc item 9 today' })
+})
+
 test('a grouping card files ad-hoc items under a finished goal, or is dismissed for good', () => {
   let s = emptyState()
   for (const text of ['rename', 'move', 'sub-tasks fix', 'Slack sync']) s = ok(applyOp(s, { kind: 'did', text, label: 'qoyod' }, AT)).state

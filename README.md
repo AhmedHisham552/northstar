@@ -78,6 +78,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track focus 3` / `focus off` | Set or clear the Now goal for that goal's label |
 | `/track start 3.2` / `stop` | Mark work in progress: it spins in the pane until ticked or stopped |
 | `/track did Rewrote the status sync` | Log ad-hoc work under Today |
+| `/track undo 2` | Remove logged item 2 (no number: the newest) |
 | `/track yes` / `/track no` | Accept or dismiss the grouping card |
 | `/track rename 3 New name` | Rename a goal (`3.2` for a sub-task); its sub-tasks and details stay |
 | `/track move 3, 5 @label` | Move goals to a label (`@general` to clear, `@here` for this repo); `tag` still works |

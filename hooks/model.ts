@@ -24,6 +24,7 @@ export type Op =
   | { kind: 'tag'; goal: number; label: string | null }
   | { kind: 'rename'; goal: number; sub?: number; text: string; detail?: string }
   | { kind: 'did'; text: string; label: string | null }
+  | { kind: 'undo'; id?: number }
   | { kind: 'group'; title: string; ids: number[] }
   | { kind: 'accept' }
   | { kind: 'dismiss' }
@@ -108,6 +109,17 @@ export function applyOp(input: State, op: Op, at: string): Result {
     s.nextLog = id + 1
     todayOf(s, at).items.push({ id, text: op.text, label: op.label })
     events.push({ at, type: 'adhoc.done', goal: 0, sub: id, label: op.label, text: op.text })
+    return { state: s, events }
+  }
+
+  // Removes a logged item (the newest when no id); the log keeps an adhoc.undo so summaries drop it too.
+  if (op.kind === 'undo') {
+    const t = todayOf(s, at)
+    const item = op.id === undefined ? t.items.findLast(i => i.id !== undefined) : t.items.find(i => i.id === op.id)
+    if (!item) return { error: op.id === undefined ? 'nothing logged today' : `no ad-hoc item ${op.id} today` }
+    t.items = t.items.filter(i => i !== item)
+    if (t.suggest?.ids.includes(item.id!)) delete t.suggest
+    events.push({ at, type: 'adhoc.undo', goal: 0, sub: item.id!, label: item.label, text: item.text })
     return { state: s, events }
   }
 
