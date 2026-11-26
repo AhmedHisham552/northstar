@@ -94,15 +94,15 @@ test('ad-hoc work shows under DONE unless it was grouped under a goal', () => {
     ev(18, 10, 'adhoc.done', 0, 'rename', { sub: 2 }),
     ev(18, 10, 'adhoc.done', 0, 'typo test', { sub: 3 }),
     ev(18, 10, 'adhoc.undo', 0, 'typo test', { sub: 3 }),
-    ev(18, 11, 'goal.add', 7, 'Waypoint'),
+    ev(18, 11, 'goal.add', 7, 'Northstar'),
     ev(18, 11, 'sub.add', 7, 'rename', { sub: 1 }),
     ev(18, 11, 'sub.done', 7, 'rename', { sub: 1 }),
-    ev(18, 11, 'adhoc.group', 7, 'Waypoint', { open: ['2'] }),
-    ev(18, 11, 'goal.done', 7, 'Waypoint'),
+    ev(18, 11, 'adhoc.group', 7, 'Northstar', { open: ['2'] }),
+    ev(18, 11, 'goal.done', 7, 'Northstar'),
   ]
   const out = summarize(log, new Date(2026, 10, 18), new Date(2026, 10, 19), 'Wed 18 Nov', false)
   expect(out).toContain('· Slack status sync')
-  expect(out).toContain('✓ Waypoint')
+  expect(out).toContain('✓ Northstar')
   expect(out.match(/rename/g)).toHaveLength(1)
   expect(out).not.toContain('typo test')
 })

@@ -1,20 +1,20 @@
 {
-  "name": "waypoint",
-  "version": "0.4.4",
-  "description": "Waypoint: a goals pane for Claude Code (/track): focus, sub-tasks, labels per repo, and standup/weekly summaries from a change log",
+  "name": "northstar",
+  "version": "0.5.0",
+  "description": "Northstar: a goals pane for Claude Code (/track): focus, sub-tasks, labels per repo, and standup/weekly summaries from a change log",
   "license": "MIT",
   "types": "./types/index.d.ts",
   "author": {
     "name": "Ahmed Hisham",
     "url": "https://github.com/AhmedHisham552"
   },
-  "repository": "https://github.com/AhmedHisham552/waypoint",
+  "repository": "https://github.com/AhmedHisham552/northstar",
   "userConfig": {
     "dataDir": {
       "type": "string",
       "title": "Data folder",
       "description": "Where goals.json and the log/ folder are kept",
-      "default": "~/.waypoint"
+      "default": "~/.northstar"
     },
     "workWeek": {
       "type": "string",
@@ -35,7 +35,7 @@
     "dispatch": {
       "type": "string",
       "title": "Dispatch",
-      "description": "How /waypoint:work runs each goal after aligning: background agents (lighter) or workflows (more thorough, more agents)",
+      "description": "How /northstar:work runs each goal after aligning: background agents (lighter) or workflows (more thorough, more agents)",
       "options": [
         "agents",
         "workflow"

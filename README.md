@@ -1,10 +1,10 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/waypoint-mark-dark.svg">
-    <img src="assets/logo/waypoint-mark-light.svg" width="96" alt="Waypoint">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/northstar-mark-dark.svg">
+    <img src="assets/logo/northstar-mark-light.svg" width="96" alt="Northstar">
   </picture>
 </p>
-<h1 align="center">Waypoint</h1>
+<h1 align="center">Northstar</h1>
 
 **A goals pane for Claude Code, driven by `/track`.** Keep the few things you want to get done beside the chat, see what you are working on *now*, tick sub-tasks as you go, and get your standup or weekly review written for you from what actually happened.
 
@@ -14,7 +14,7 @@
 https://github.com/user-attachments/assets/3ad2d142-2b5f-48d3-9b5b-e4c7c79641e0
 
 ```
-◎ Waypoint · Goals        0/4
+✦ Northstar · Goals        0/4
 ──────────────────────────────
 Now                        2/4
 ◑ #3 Ship onboarding guide
@@ -35,7 +35,7 @@ General
 ## Quick start
 
 ```
-/plugin install waypoint --marketplace AhmedHisham552/waypoint
+/plugin install northstar --marketplace AhmedHisham552/northstar
 ```
 
 Answer `y` to add the marketplace, then pick **user** scope so the pane is there in every project. Then:
@@ -52,7 +52,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Focus.** One goal is **Now**: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view (`· ◎ Now ◑ #3 Ship onboarding guide 2/4`).
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.3 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
-- **Long goals get a short title.** Paste a paragraph into `/track add` and Haiku turns it into a short title. The full text is kept as the goal's details, shown faded under the Now goal and handed word for word to Claude and the agents `/waypoint:work` dispatches. A `;` splits goals only when every part is short (60 characters or fewer), so a pasted paragraph stays one goal.
+- **Long goals get a short title.** Paste a paragraph into `/track add` and Haiku turns it into a short title. The full text is kept as the goal's details, shown faded under the Now goal and handed word for word to Claude and the agents `/northstar:work` dispatches. A `;` splits goals only when every part is short (60 characters or fewer), so a pasted paragraph stays one goal.
 - **Today.** The bottom of the pane lists what got finished today, newest first: ticked sub-tasks and goals (`✓`) and ad-hoc work (`·`). It shows five; `+N more` opens the rest and the header collapses it. It starts fresh each day.
 - **Ad-hoc work is logged for you.** When Claude finishes something that isn't a goal (a Slack rewrite, a quick fix), it logs one line with `did`, so summaries and standups stop missing it. It never adds goals on its own: when new multi-step work matches no open goal, it shows a "Track as a goal?" card in the pane, and the goal is added only if you press Add.
 - **Grouping card.** When three or more of today's ad-hoc items share a topic, a faded card in the pane offers to group them as a goal. **Group** (or `/track yes`) files them as that goal's ticked sub-tasks; **Dismiss** (or `/track no`) drops the card, and the same grouping isn't offered again.
@@ -60,7 +60,7 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 - **Labels per repo.** Goals added with `@here` belong to the repo you are in, and every worktree of that repo shares them. Other repos' labels show as one header line you can click to open. Untagged goals are **General**.
 - **Change log.** Adds, ticks, progress, focus and removals are recorded with their time and an optional note.
 - **Summaries.** `yesterday`, `today`, `week` or any date range, as an exact log plus a short update ready to paste into Slack or a standup thread.
-- **Work on goals from one session.** `/waypoint:work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
+- **Work on goals from one session.** `/northstar:work 1 3` has Claude gather context and ask you everything up front. Once you confirm, it dispatches one background agent per goal, with progress ticking into the pane as they finish.
 - **Ask about your log.** Claude answers "what did I do this week?" from your log.
 
 ## Usage
@@ -86,8 +86,8 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 | `/track @label` | Open or close another label in the pane (or click its header) |
 | `/track yesterday` / `today` / `week` | Summary for that period |
 | `/track from 2026-11-01 to 2026-11-15` | Summary for any date range |
-| `/waypoint:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
-| `/waypoint:work 2.4 2.5 workflow` | Work on chosen sub-tasks only, run as workflows |
+| `/northstar:work 1 3` | Plan and dispatch work on goals #1 and #3 (see below) |
+| `/northstar:work 2.4 2.5 workflow` | Work on chosen sub-tasks only, run as workflows |
 | `/track done-list` | List finished goals |
 | `/track` | Open the pane and show help |
 
@@ -99,7 +99,7 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Working on goals
 
-`/waypoint:work <n|n.m> … [agents|workflow]` (a skill that ships with the plugin) turns this session into an orchestrator. Pass whole goals (`1 3`), chosen sub-tasks (`2.4 2.5`), or both:
+`/northstar:work <n|n.m> … [agents|workflow]` (a skill that ships with the plugin) turns this session into an orchestrator. Pass whole goals (`1 3`), chosen sub-tasks (`2.4 2.5`), or both:
 
 1. **Align.** Claude reads what it can from the code, docs and tools, adds sub-tasks to any goal without them, then asks you every question it needs answered, in one message.
 2. **Dispatch.** Once you confirm, it starts one background agent per goal, or one workflow per goal with `workflow` (or the `dispatch` setting), each with a self-contained brief. Each agent ticks its sub-tasks in the pane as it finishes them, and stops to report a question rather than guess.
@@ -137,7 +137,7 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## How it works
 
-- **Files.** Everything lives in one folder (default `~/.waypoint`; an install from before the rename keeps reading `~/.claude-goals`):
+- **Files.** Everything lives in one folder (default `~/.northstar`; an install from before the rename keeps reading `~/.waypoint` or `~/.claude-goals`):
   - `goals.json`: the current goals.
   - `log/YYYY-MM.jsonl`: one line per change, one file per month.
 
@@ -149,14 +149,14 @@ In the pane, a goal row sets focus and a sub-task row ticks it, by click or keyb
 
 ## Configuration
 
-Run `/plugin`, open **waypoint**, and set:
+Run `/plugin`, open **northstar**, and set:
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `dataDir` | `~/.waypoint` | Folder for `goals.json` and `log/` |
+| `dataDir` | `~/.northstar` | Folder for `goals.json` and `log/` |
 | `workWeek` | `sun-thu` | Working days for `yesterday` and `week` (`sun-thu` or `mon-fri`) |
 | `autoUpdate` | on | Claude may switch focus and tick sub-tasks on its own from the conversation |
-| `dispatch` | `agents` | How `/waypoint:work` runs each goal: `agents` (lighter) or `workflow` (more thorough, uses more agents) |
+| `dispatch` | `agents` | How `/northstar:work` runs each goal: `agents` (lighter) or `workflow` (more thorough, uses more agents) |
 
 The pane docks beside the chat in the fullscreen layout on a terminal at least 110 columns wide. To have that in every session, with no flag to remember, add this to `~/.claude/settings.json`:
 
@@ -182,8 +182,8 @@ Your goals and log are stored on your machine, in `dataDir`. Two things go to Cl
 ## Development
 
 ```
-git clone https://github.com/AhmedHisham552/waypoint
-cd waypoint
+git clone https://github.com/AhmedHisham552/northstar
+cd northstar
 claude --plugin-dir .        # run it from this folder
 claude plugin validate .
 claude plugin test .

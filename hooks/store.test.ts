@@ -25,13 +25,15 @@ function memIo(store: Record<string, unknown> = {}) {
 
 const ev = (at: string, text: string): Event => ({ at, type: 'goal.add', goal: 1, label: null, text })
 
-test('data folder defaults to ~/.waypoint, keeps a pre-rename ~/.claude-goals, and expands ~', async () => {
+test('data folder defaults to ~/.northstar, keeps a pre-rename folder, and expands ~', async () => {
   const { io, files } = memIo()
-  expect(await dataDir(io, undefined)).toBe('/home/u/.waypoint')
+  expect(await dataDir(io, undefined)).toBe('/home/u/.northstar')
   files.set('/home/u/.claude-goals/goals.json', '{}')
-  expect(await dataDir(io, '~/.waypoint')).toBe('/home/u/.claude-goals')
+  expect(await dataDir(io, '~/.northstar')).toBe('/home/u/.claude-goals')
   files.set('/home/u/.waypoint/goals.json', '{}')
-  expect(await dataDir(io, '~/.waypoint')).toBe('/home/u/.waypoint')
+  expect(await dataDir(io, undefined)).toBe('/home/u/.waypoint')
+  files.set('/home/u/.northstar/goals.json', '{}')
+  expect(await dataDir(io, '~/.northstar')).toBe('/home/u/.northstar')
   expect(await dataDir(io, '~/x/')).toBe('/home/u/x')
   expect(await dataDir(io, '/abs/goals')).toBe('/abs/goals')
 })

@@ -15,11 +15,11 @@ import { goalsBrief, hintTail, shortTitle, titlePrompt, workPrompt } from './bri
 import { paneTree, summaryTree } from './view'
 import type { View } from './view'
 
-const PANE = 'waypoint'
-const TOOL = 'mcp__waypoint__update_goals'
+const PANE = 'northstar'
+const TOOL = 'mcp__northstar__update_goals'
 const MODEL = 'claude-haiku-5-5'
-const view = atom({ plugin: 'waypoint', key: 'view' } as const, null as View | null)
-const frame = atom({ plugin: 'waypoint', key: 'frame' } as const, null as number | null)
+const view = atom({ plugin: 'northstar', key: 'view' } as const, null as View | null)
+const frame = atom({ plugin: 'northstar', key: 'frame' } as const, null as number | null)
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 // Advance the spinner only while something is in progress, so an idle pane never redraws.
@@ -60,7 +60,7 @@ export const HELP = [
   '/track @label                    open / close a label in the pane',
   '/track yesterday | today | week  summary with a ready-to-post update',
   '/track from YYYY-MM-DD to YYYY-MM-DD',
-  '/waypoint:work <n|n.m> … [workflow] align here, then dispatch agents or workflows',
+  '/northstar:work <n|n.m> … [workflow] align here, then dispatch agents or workflows',
   '/track done-list                 finished goals',
 ].join('\n')
 
@@ -214,18 +214,18 @@ export const register: Register = (on, options) => {
     const label = await repoLabel((argv, init) => $.process.run(argv, init), e.cwd)
     const state = await loadState(io, d)
     await update($, view, () => ({ state, label, today: at.slice(0, 10), collapsed: [] }))
-    await $.command.register({ name: 'track', description: 'Waypoint goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
+    await $.command.register({ name: 'track', description: 'Northstar goals pane: add, sub-tasks, tick, focus, summaries (yesterday/today/week)' })
     await $.tool.register({
       name: 'update_goals',
       description:
         "Read or change the user's goals pane, or get a summary. Takes one /track command line without the slash word, e.g. " +
-        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "did Rewrote the status sync", "offer Cash forecast spike", "group Waypoint fixes: 3, 4, 5", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
+        '"add @here Write docs; Ship v2", "sub 3 Draft; Review", "tick 3.1 \\"note\\"", "3 60", "done 3", "focus 3", "rename 3 New name", "move 3 @work", "did Rewrote the status sync", "offer Cash forecast spike", "group Northstar fixes: 3, 4, 5", "yesterday", "week", "from 2026-11-01 to 2026-11-15". ' +
         'A goal name over ' + TITLE_MAX + ' characters gets a short title, with the full text kept as its details. ' +
         'Use it when work you did completes a listed sub-task or moves a goal, or when the user asks about their goals or for a standup/weekly summary. Goal numbers are the #ids shown in the pane.',
       isDeferred: false,
       inputSchema: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] },
     })
-    void $.ui.open({ id: PANE, title: 'Waypoint', columns: 32, backgroundColor: 'transparent' })
+    void $.ui.open({ id: PANE, title: 'Northstar', columns: 32, backgroundColor: 'transparent' })
     // ponytail: 4s mtime poll; a file watcher if the API ever offers one.
     $.clock.every(4000, () => void refresh($, o))
     $.clock.every(120, () => void spinTick($))
@@ -248,12 +248,12 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'track' }, async ($, e) => {
-    await $.ui.open({ id: PANE, title: 'Waypoint', columns: 32, backgroundColor: 'transparent' })
+    await $.ui.open({ id: PANE, title: 'Northstar', columns: 32, backgroundColor: 'transparent' })
     const cmd = parse(e.args)
-    // A command can't start a turn; the plugin's /waypoint:work skill does.
+    // A command can't start a turn; the plugin's /northstar:work skill does.
     if (cmd.kind === 'work') {
       const what = cmd.items.flatMap(i => (i.subs ? i.subs.map(x => `${i.goal}.${x}`) : [String(i.goal)]))
-      return { text: `Run /waypoint:work ${what.join(' ')}${cmd.mode ? ` ${cmd.mode}` : ''} to start working on ${what.map(n => `#${n}`).join(', ')}.` }
+      return { text: `Run /northstar:work ${what.join(' ')}${cmd.mode ? ` ${cmd.mode}` : ''} to start working on ${what.map(n => `#${n}`).join(', ')}.` }
     }
     return { text: await run($, o, cmd) }
   })
@@ -270,7 +270,7 @@ export const register: Register = (on, options) => {
     if (cmd.kind === 'op' && ['focus', 'tick', 'done', 'progress', 'did'].includes(cmd.op.kind) && !result.startsWith('no ')) {
       const prev = before?.state ? (before.state.focus[before.label] ?? before.state.focus.general) : undefined
       const undo = cmd.op.kind === 'focus' && prev && prev !== cmd.op.goal ? ` · /track focus ${prev} to undo` : ''
-      $.ui.toast(`Waypoint: ${result.split('\n').at(-1)}${undo}`)
+      $.ui.toast(`Northstar: ${result.split('\n').at(-1)}${undo}`)
     }
     return { result } as never
   })

@@ -1,13 +1,13 @@
 {
-  "name": "waypoint",
+  "name": "northstar",
   "owner": {
     "name": "Ahmed Hisham"
   },
   "plugins": [
     {
-      "name": "waypoint",
+      "name": "northstar",
       "source": "./"
     }
   ],
-  "description": "Waypoint: a goals pane for Claude Code, with focus, sub-tasks and standups"
+  "description": "Northstar: a goals pane for Claude Code, with focus, sub-tasks and standups"
 }

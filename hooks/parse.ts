@@ -109,7 +109,7 @@ export function parse(args: string): Cmd {
     case 'undo':
       return words.length === 1 ? op({ kind: 'undo' }) : words.length === 2 && /^\d+$/.test(a) ? op({ kind: 'undo', id: Number(a) }) : HELP
     case 'group': {
-      // `group Waypoint improvements: 3, 4, 5`
+      // `group Northstar improvements: 3, 4, 5`
       const m = args.trim().slice(5).match(/^(.+):\s*([\d,\s[\]]+)$/)
       const ids = (m?.[2] ?? '').split(/[\s,[\]]+/).filter(Boolean).map(Number)
       return m && m[1]!.trim() && ids.length ? op({ kind: 'group', title: m[1]!.trim(), ids }) : HELP
