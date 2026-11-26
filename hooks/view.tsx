@@ -27,6 +27,11 @@ const amount = (g: Goal) => (g.subs.length ? `${g.subs.filter(s => s.done).lengt
 export const focusedGoal = focused
 
 // A spinner frame replaces the glyph while the goal is being worked on.
+const progressBar = (ui: Els, g: Goal, width: number) => {
+  const { Text } = ui
+  const filled = Math.round((width * progressOf(g)) / 100)
+  return <Text><Text color={g.doneAt ? 'success' : ACCENT}>{'━'.repeat(filled)}</Text><Text color="subtle">{'─'.repeat(width - filled)}</Text></Text>
+}
 const goalMark = (g: Goal, act: Act) => (g.doneAt ? glyph(100) : act.spin(String(g.id)) ?? glyph(progressOf(g)))
 
 // One row in parts: glyph in the accent (green once done), number dim, text, count dim and flush right.
@@ -152,7 +157,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
     return (
       <Box flexDirection="column">
         {header}
-        {offerCard(ui, v, width, act)}
+      {offerCard(ui, v, width, act)}
         <Text color="subtle">No goals yet.</Text>
         <Text color="subtle">/track add &lt;text&gt;</Text>
         <Text> </Text>
@@ -173,13 +178,14 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   return (
     <Box flexDirection="column">
       {header}
-        {offerCard(ui, v, width, act)}
+      {offerCard(ui, v, width, act)}
       {now && (
         <Box flexDirection="column" marginBottom={1}>
           <Box justifyContent="space-between">
             <Text color={ACCENT} bold>Now</Text>
             {amount(now) && <Text color="subtle">{amount(now)}</Text>}
           </Box>
+          {progressBar(ui, now, width)}
           <Text bold wrap="wrap">
             <Text color={now.doneAt ? 'success' : ACCENT}>{goalMark(now, act)}</Text> <Text color="subtle">{`#${now.id}`}</Text> {now.text}
           </Text>
