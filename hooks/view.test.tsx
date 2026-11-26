@@ -54,6 +54,7 @@ test('pane shows NOW with sub-tasks, groups, other labels open and cuts long nam
     expect(await texts(ui, /^0\/5$/)).toBe('0/5')
     expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
     expect(await texts(ui, /^1\/2$/)).toBe('1/2')
+    expect(await texts(ui, /^━+─+$/)).toMatch(/^━{14,17}─+$/)
     expect(await button(ui, 'g2')).toBe('○ #2 Demo prep')
     expect(await button(ui, 's1.1')).toContain('✓ 1.1 Read docs')
     expect(await texts(ui, /^shop$/)).toBe('shop')
