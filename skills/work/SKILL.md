@@ -1,6 +1,6 @@
 ---
 name: work
-description: Orchestrate work on one or more goals from the goals pane - align with the user first, then dispatch a background agent per goal that ticks its sub-tasks. Use when the user runs /waypoint:work or asks to work on, start or dispatch goals by number.
+description: Orchestrate work on one or more goals from the goals pane - align with the user first, then dispatch a background agent per goal that ticks its sub-tasks. Use when the user runs /northstar:work or asks to work on, start or dispatch goals by number.
 argument-hint: <goals or sub-tasks, e.g. 1 3 or 2.4 2.5> [agents|workflow]
 ---
 

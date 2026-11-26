@@ -101,7 +101,7 @@ test('rename and move', () => {
 test('did, group, yes and no', () => {
   expect(op('did Rewrote the "status" sync')).toEqual({ kind: 'did', text: 'Rewrote the "status" sync', label: '@here' })
   expect(op('did @general Lunch talk')).toEqual({ kind: 'did', text: 'Lunch talk', label: null })
-  expect(op('group Waypoint fixes: 3, 4, 5')).toEqual({ kind: 'group', title: 'Waypoint fixes', ids: [3, 4, 5] })
+  expect(op('group Northstar fixes: 3, 4, 5')).toEqual({ kind: 'group', title: 'Northstar fixes', ids: [3, 4, 5] })
   expect(parse('group no ids')).toEqual({ kind: 'help' })
   expect(op('yes')).toEqual({ kind: 'accept' })
   expect(op('no')).toEqual({ kind: 'dismiss' })

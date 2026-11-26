@@ -43,7 +43,7 @@ export function goalsBrief(v: Shown): string {
   const t = shownToday(v.state, v.today)
   const adhoc = t?.items.filter(i => i.id !== undefined) ?? []
   return [
-    "The user's goals (Waypoint plugin). This session's repo label is " + `"${v.label}".`,
+    "The user's goals (Northstar plugin). This session's repo label is " + `"${v.label}".`,
     ...(lines.length ? lines : ['(no open goals)']),
     ...(adhoc.length ? ['', 'Ad-hoc work logged today (id, text):', ...adhoc.map(i => `  ${i.id} ${i.text}`)] : []),
     ...(t?.suggest ? [`Grouping card waiting in the pane: "${t.suggest.title}" (${t.suggest.ids.join(', ')})`] : []),
@@ -71,7 +71,7 @@ export function workPrompt(items: { goal: Goal; subs?: number[] }[], dispatch: D
   ])
   const runner =
     dispatch === 'workflow'
-      ? `run one workflow per goal with the Workflow tool (I opted into workflows by running /waypoint:work in workflow mode). Give each a self-contained brief (goal, its sub-tasks, my answers, constraints). Its agents call update_goals "start <n>.<m>" when they begin a sub-task and tick it ("tick <n>.<m> \\"short note\\"") as they finish them, do not guess on open questions, and the workflow returns the exact question instead of continuing when blocked.`
+      ? `run one workflow per goal with the Workflow tool (I opted into workflows by running /northstar:work in workflow mode). Give each a self-contained brief (goal, its sub-tasks, my answers, constraints). Its agents call update_goals "start <n>.<m>" when they begin a sub-task and tick it ("tick <n>.<m> \\"short note\\"") as they finish them, do not guess on open questions, and the workflow returns the exact question instead of continuing when blocked.`
       : `start one background agent per goal with a self-contained brief (goal, its sub-tasks, my answers, constraints). Each agent calls update_goals "start <n>.<m>" when it begins a sub-task and ticks it ("tick <n>.<m> \\"short note\\"") as it finishes them, does not guess on open questions, and if blocked returns the exact question instead of continuing.`
   return [
     `Orchestrate work on my goal${items.length > 1 ? 's' : ''}:\n${list.join('\n')}`,

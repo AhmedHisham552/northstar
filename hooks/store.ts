@@ -28,15 +28,16 @@ export function engineIo($: Engine): Io {
   }
 }
 
-const DEFAULT_DIR = '~/.waypoint'
-const OLD_DIR = '~/.claude-goals' // the default before the rename to Waypoint
+const DEFAULT_DIR = '~/.northstar'
+const OLD_DIRS = ['~/.waypoint', '~/.claude-goals'] // earlier defaults, newest first
 
 export async function dataDir(io: Io, configured: string | undefined): Promise<string> {
   const raw = (configured?.trim() || DEFAULT_DIR).replace(/\/+$/, '')
   const home = (await io.home()) ?? ''
   const abs = (p: string) => (p.startsWith('~') ? `${home}${p.slice(1)}` : p)
-  // An install from before the rename keeps its goals: read the old folder until the new one has a goals.json.
-  if (raw === DEFAULT_DIR && !(await io.exists(`${abs(DEFAULT_DIR)}/goals.json`)) && (await io.exists(`${abs(OLD_DIR)}/goals.json`))) return abs(OLD_DIR)
+  // An install from before a rename keeps its goals: read an old folder until the new one has a goals.json.
+  if (raw === DEFAULT_DIR && !(await io.exists(`${abs(DEFAULT_DIR)}/goals.json`)))
+    for (const old of OLD_DIRS) if (await io.exists(`${abs(old)}/goals.json`)) return abs(old)
   return abs(raw)
 }
 

@@ -30,8 +30,8 @@ const view = (s: State) => ({ value: { value: { state: s, label: 'shop', today: 
 
 const PANE = (surface: 'terminal' | 'desktop') =>
   ({
-    plugin: 'waypoint', surface, component: 'Pane', requestId: 'waypoint',
-    props: { title: 'Waypoint', isFocused: false, bodyColumns: 32, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
+    plugin: 'northstar', surface, component: 'Pane', requestId: 'northstar',
+    props: { title: 'Northstar', isFocused: false, bodyColumns: 32, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
   }) as const
 
 type Found = { text?: string; label?: string; props?: { label?: string } }
@@ -50,7 +50,7 @@ test('pane shows NOW with sub-tasks, groups, other labels open and cuts long nam
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(PANE(surface))
     expect(await texts(ui, /^Now$/)).toBe('Now')
-    expect(await texts(ui, /Goals/)).toBe('◎ Waypoint · Goals')
+    expect(await texts(ui, /Goals/)).toBe('✦ Northstar · Goals')
     expect(await texts(ui, /^0\/5$/)).toBe('0/5')
     expect(await texts(ui, /#1 Card research/)).toBe('◑ #1 Card research')
     expect(await texts(ui, /^1\/2$/)).toBe('1/2')
@@ -108,27 +108,27 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('sub 1 Read docs; Pricing call')
   await run('tick 1.1 "quick win"')
   expect(await run('tick 9.9')).toBe('no goal #9')
-  expect(await run('')).toContain('/waypoint:work <n|n.m>')
+  expect(await run('')).toContain('/northstar:work <n|n.m>')
 
   // Another session ticks 1.2: the next prompt here carries the fresh state.
-  const other = JSON.parse(files.get('/home/u/.waypoint/goals.json')!)
+  const other = JSON.parse(files.get('/home/u/.northstar/goals.json')!)
   other.goals[0].subs[1].done = true
-  files.set('/home/u/.waypoint/goals.json', JSON.stringify(other))
+  files.set('/home/u/.northstar/goals.json', JSON.stringify(other))
   await $.prompt.submit({ text: 'next', wait: false, origin: { kind: 'composer' } } as never)
   expect(lastContext.join('\n')).toContain('1.2 [x] Pricing call')
-  expect(await run('work [1]')).toBe('Run /waypoint:work 1 to start working on #1.')
-  expect(await run('work 1.2 workflow')).toBe('Run /waypoint:work 1.2 workflow to start working on #1.2.')
+  expect(await run('work [1]')).toBe('Run /northstar:work 1 to start working on #1.')
+  expect(await run('work 1.2 workflow')).toBe('Run /northstar:work 1.2 workflow to start working on #1.2.')
   expect(submitted).toEqual(['next'])
-  const viaTool = (await $.tool.call({ tool: 'mcp__waypoint__update_goals', command: 'work 1' } as never)) as unknown as { result?: string; text?: string }
+  const viaTool = (await $.tool.call({ tool: 'mcp__northstar__update_goals', command: 'work 1' } as never)) as unknown as { result?: string; text?: string }
   expect(String(viaTool.result ?? viaTool.text)).toMatch(/^Orchestrate work on my goal:\n#1 Card research/)
-  const subOnly = (await $.tool.call({ tool: 'mcp__waypoint__update_goals', command: 'work 1.9' } as never)) as unknown as { result?: string }
+  const subOnly = (await $.tool.call({ tool: 'mcp__northstar__update_goals', command: 'work 1.9' } as never)) as unknown as { result?: string }
   expect(subOnly.result).toBe('no sub-task 1.9')
   await run('focus 1')
 
-  const saved = JSON.parse(files.get('/home/u/.waypoint/goals.json')!)
+  const saved = JSON.parse(files.get('/home/u/.northstar/goals.json')!)
   expect(saved.focus).toEqual({ shop: 1 })
   expect(saved.goals[0]).toMatchObject({ id: 1, label: 'shop', subs: [{ done: true }, { done: true }] }) // 1.2 was ticked by the other session
-  const log = files.get('/home/u/.waypoint/log/2026-11.jsonl')!.trim().split('\n').map(l => JSON.parse(l).type)
+  const log = files.get('/home/u/.northstar/log/2026-11.jsonl')!.trim().split('\n').map(l => JSON.parse(l).type)
   expect(log).toEqual(['goal.add', 'goal.add', 'sub.add', 'sub.add', 'sub.done', 'goal.focus'])
   await run('add Tmp A; Tmp B')
   expect(await run('rm [3, 4]')).toBe('goal remove: #3 Tmp A\ngoal remove: #4 Tmp B')
@@ -147,23 +147,23 @@ test('commands write goals.json and the month log, summaries add a post', async 
   await run('add Write post')
   await run('focus 3')
   await run('focus off')
-  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).focus).toEqual({})
+  expect(JSON.parse(files.get('/home/u/.northstar/goals.json')!).focus).toEqual({})
 
   // A long goal is titled by the model and keeps its full text as details.
   const para = 'Make the track command smarter: when a goal is long, rephrase it and keep "all of this" as details'
   await run(`add ${para}`)
   expect(prompts.at(-1)).toContain('Rewrite this goal')
-  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Today I ticked Read docs', detail: para })
-  const id = JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1).id
+  expect(JSON.parse(files.get('/home/u/.northstar/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Today I ticked Read docs', detail: para })
+  const id = JSON.parse(files.get('/home/u/.northstar/goals.json')!).goals.at(-1).id
   await run(`rename ${id} Smarter track add`)
   await run(`move ${id} @here`)
-  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Smarter track add', detail: para, label: 'shop' })
+  expect(JSON.parse(files.get('/home/u/.northstar/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Smarter track add', detail: para, label: 'shop' })
 
   // Ad-hoc work, grouped from the card with /track yes.
   for (const w of ['rename', 'move', 'sub-tasks fix']) expect(await run(`did ${w}`)).toBe(`logged today: ${w}`)
-  expect(await run('group Waypoint: 1, 2, 3')).toContain('Suggested in the pane')
-  expect(await run('yes')).toMatch(/^grouped: #\d+ Waypoint$/)
-  expect(JSON.parse(files.get('/home/u/.waypoint/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Waypoint', label: 'shop', subs: [{ done: true }, { done: true }, { done: true }] })
+  expect(await run('group Northstar: 1, 2, 3')).toContain('Suggested in the pane')
+  expect(await run('yes')).toMatch(/^grouped: #\d+ Northstar$/)
+  expect(JSON.parse(files.get('/home/u/.northstar/goals.json')!).goals.at(-1)).toMatchObject({ text: 'Northstar', label: 'shop', subs: [{ done: true }, { done: true }, { done: true }] })
   expect(await run('no')).toBe('nothing to dismiss')
 })
 
@@ -188,7 +188,7 @@ test('Claude gets the goals with each prompt, and the hint line gets the NOW tai
   await $.prompt.submit({ text: 'look at the card pricing', wait: false, origin: { kind: 'composer' } } as never)
   expect(context.join('\n')).toContain('#1 Card research [shop] (NOW)')
 
-  const ui = await $.ui.mount({ plugin: 'waypoint', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
+  const ui = await $.ui.mount({ plugin: 'northstar', surface: 'terminal', component: 'PromptHint', props: { isDraft: false, isWorking: false, hint: '? for shortcuts', modes: [] } } as never)
   expect(seen).toBe('· ◎ Now ◑ #1 Card research 1/2')
   await ui.unmount()
 })
@@ -223,7 +223,7 @@ test('work in progress spins in the pane', async ($, on) => {
 })
 
 test('a summary draws framed with accent keys and a post', async ($, on) => {
-  const out = (text: string) => ({ plugin: 'waypoint', surface: 'terminal', component: 'CommandOutput', props: { command: 'track', args: 'yesterday', text, isErrored: false } }) as never
+  const out = (text: string) => ({ plugin: 'northstar', surface: 'terminal', component: 'CommandOutput', props: { command: 'track', args: 'yesterday', text, isErrored: false } }) as never
   const text = 'Tue 17 Nov\nPLANNED     2 goals open\nDONE        ✓ Draft (Ship docs)\n                sandbox next week\n\nPOST\nDrafted the docs.'
   const ui = await $.ui.mount(out(text))
   expect(await texts(ui, /^PLANNED/)).toBe('PLANNED     2 goals open')

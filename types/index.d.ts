@@ -30,6 +30,6 @@ export type View = { state: State | null; label: string; today: string; collapse
 
 declare module 'claude-code' {
   interface PluginState {
-    waypoint: { view: View | null; frame: number | null }
+    northstar: { view: View | null; frame: number | null }
   }
 }

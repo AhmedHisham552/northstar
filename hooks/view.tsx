@@ -142,7 +142,7 @@ export function paneTree(ui: Els, v: Shown, width: number, act: Act) {
   const header = (
     <Box flexDirection="column" marginBottom={1}>
       <Box justifyContent="space-between">
-        <Text color={ACCENT} bold>◎ Waypoint · Goals</Text>
+        <Text color={ACCENT} bold>✦ Northstar · Goals</Text>
         <Text color="subtle">{count}</Text>
       </Box>
       <Text color="subtle">{'─'.repeat(width)}</Text>
