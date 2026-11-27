@@ -18,6 +18,7 @@ https://github.com/user-attachments/assets/9fbbdf9f-567a-44c9-a817-db1280c7b6c0
 ✦ Northstar · Goals        0/4
 ──────────────────────────────
 Now                        2/4
+━━━━━━━━━━━━━━━───────────────
 ◑ #3 Ship onboarding guide
   ✓ 3.1 Outline
   ✓ 3.2 First draft
@@ -31,6 +32,11 @@ General
 ◕ #2 Prepare demo            3/4
 
 ▸ other-repo                 2
+
+▾ Today                      3
+✓ 3.2 First draft
+· 8 Rewrote the Slack update
+✓ 3.1 Outline
 ```
 
 ## Quick start
@@ -62,11 +68,11 @@ Your goals carry over: Northstar keeps reading `~/.waypoint` or `~/.claude-goals
 ## Features
 
 - **Side pane** that stays beside the chat, about 32 columns wide.
-- **Focus.** One goal is **Now**: it sits on top with its sub-tasks, and the hint line under the prompt keeps it in view (`· ◎ Now ◑ #3 Ship onboarding guide 2/4`).
+- **Focus.** One goal is **Now**: it sits on top with its sub-tasks and a progress bar that fills as they are ticked, and the hint line under the prompt keeps it in view (`· ◎ Now ◑ #3 Ship onboarding guide 2/4`).
 - **Hands-off updates.** Claude sees your open goals with each prompt. When you start talking about another goal, it switches focus. When its work finishes a sub-task, it ticks it. A toast tells you, with a one-line undo.
 - **Live progress.** Whatever is being worked on spins in the pane (`⠹ 3.3 Screenshots`) until it's ticked. Claude and its agents mark sub-tasks as they start them.
 - **Long goals get a short title.** Paste a paragraph into `/track add` and Haiku turns it into a short title. The full text is kept as the goal's details, shown faded under the Now goal and handed word for word to Claude and the agents `/northstar:work` dispatches. A `;` splits goals only when every part is short (60 characters or fewer), so a pasted paragraph stays one goal.
-- **Today.** The bottom of the pane lists what got finished today, newest first: ticked sub-tasks and goals (`✓`) and ad-hoc work (`·`). It shows five; `+N more` opens the rest and the header collapses it. It starts fresh each day.
+- **Today.** The bottom of the pane lists what got finished today, newest first: ticked sub-tasks and goals (`✓`) and ad-hoc work (`·`), each with its number so `/track undo 8` can remove a wrong entry. It shows five; `+N more` opens the rest and the header collapses it. It starts fresh each day.
 - **Ad-hoc work is logged for you.** When Claude finishes something that isn't a goal (a Slack rewrite, a quick fix), it logs one line with `did`, so summaries and standups stop missing it. It never adds goals on its own: when new multi-step work matches no open goal, it shows a "Track as a goal?" card in the pane, and the goal is added only if you press Add.
 - **Grouping card.** When three or more of today's ad-hoc items share a topic, a faded card in the pane offers to group them as a goal. **Group** (or `/track yes`) files them as that goal's ticked sub-tasks; **Dismiss** (or `/track no`) drops the card, and the same grouping isn't offered again.
 - **Sub-tasks** with a goal's progress worked out from them. Progress shows as a filling circle `○ ◔ ◑ ◕ ✓`, with a count (`2/4`) beside goals that have sub-tasks and a percentage beside those that don't, once they have moved.
@@ -93,7 +99,8 @@ Your goals carry over: Northstar keeps reading `~/.waypoint` or `~/.claude-goals
 | `/track did Rewrote the status sync` | Log ad-hoc work under Today |
 | `/track undo 2` | Remove logged item 2 (no number: the newest) |
 | `/track offer Cash forecast spike` | Show a "Track as a goal?" card in the pane (Claude uses this) |
-| `/track yes` / `/track no` | Accept or dismiss the grouping card |
+| `/track group Slack fixes: 4, 5, 6` | Show a card offering to group those ad-hoc items as a goal (Claude uses this) |
+| `/track yes` / `/track no` | Accept or dismiss the card in the pane (grouping or "Track as a goal?") |
 | `/track rename 3 New name` | Rename a goal (`3.2` for a sub-task); its sub-tasks and details stay |
 | `/track move 3, 5 @label` | Move goals to a label (`@general` to clear, `@here` for this repo); `tag` still works |
 | `/track @label` | Open or close another label in the pane (or click its header) |
