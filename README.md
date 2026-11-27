@@ -10,7 +10,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-https://github.com/user-attachments/assets/3ad2d142-2b5f-48d3-9b5b-e4c7c79641e0
+
+https://github.com/user-attachments/assets/9fbbdf9f-567a-44c9-a817-db1280c7b6c0
+
 
 ```
 ✦ Northstar · Goals        0/4
