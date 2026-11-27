@@ -1,10 +1,9 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/northstar-mark-dark.svg">
-    <img src="assets/logo/northstar-mark-light.svg" width="96" alt="Northstar">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/northstar-lockup-dark-transparent.svg">
+    <img src="assets/logo/northstar-lockup-light-transparent.svg" width="360" alt="Northstar">
   </picture>
 </p>
-<h1 align="center">Northstar</h1>
 
 **A goals pane for Claude Code, driven by `/track`.** Keep the few things you want to get done beside the chat, see what you are working on *now*, tick sub-tasks as you go, and get your standup or weekly review written for you from what actually happened.
 
@@ -45,6 +44,18 @@ Answer `y` to add the marketplace, then pick **user** scope so the pane is there
 /track sub 1 Outline; First draft; Screenshots; Review
 /track focus 1
 ```
+
+### Upgrading from Waypoint
+
+Northstar was called Waypoint before 0.5.0. Swap the old install for the new one:
+
+```
+/plugin uninstall waypoint@waypoint
+/plugin marketplace remove waypoint
+/plugin install northstar --marketplace AhmedHisham552/northstar
+```
+
+Your goals carry over: Northstar keeps reading `~/.waypoint` or `~/.claude-goals` until `~/.northstar` exists. Settings saved under the old name do not, so set them again with `/plugin`.
 
 ## Features
 
